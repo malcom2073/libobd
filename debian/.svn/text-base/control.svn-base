@@ -1,0 +1,21 @@
+Source: libobd
+Section: unknown
+Priority: extra
+Maintainer: Kevron Rees <tripzero@nextabyte.com>
+Build-Depends: debhelper (>= 7), libbluetooth-dev, cdbs
+Standards-Version: 3.8.1
+Homepage: http://openice.org
+
+Package: libobd
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: library for interfacing with ELM 327 based obd-II scantools 
+ interfaces with ELM 327 based obd-II scantools to provide data to apps
+
+Package: libodb-dev
+Section: libdevel
+Architecture: any
+Depends: libqt4-dev, libobd
+Description: library for interfacing with obd-II 
+ Headers and related files

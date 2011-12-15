@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svnroot/obdtoolbox/!svn/ver/93/trunk/libobd/debian
+END
+control
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svnroot/obdtoolbox/!svn/ver/93/trunk/libobd/debian/control
+END
+libobd.install
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svnroot/obdtoolbox/!svn/ver/93/trunk/libobd/debian/libobd.install
+END
+compat
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svnroot/obdtoolbox/!svn/ver/91/trunk/libobd/debian/compat
+END
+changelog
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svnroot/obdtoolbox/!svn/ver/91/trunk/libobd/debian/changelog
+END
+copyright
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svnroot/obdtoolbox/!svn/ver/91/trunk/libobd/debian/copyright
+END
+rules
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svnroot/obdtoolbox/!svn/ver/91/trunk/libobd/debian/rules
+END
+libobd-dev.install
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svnroot/obdtoolbox/!svn/ver/93/trunk/libobd/debian/libobd-dev.install
+END
