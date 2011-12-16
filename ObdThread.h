@@ -35,6 +35,12 @@ class ObdThread : public QThread
 {
 	Q_OBJECT
 public:
+	enum ObdError
+	{
+		UNABLE_TO_OPEN_COM_PORT,
+		READ_ERROR,
+		WRITE_ERROR
+	};
 
 	enum RequestType
 	{
@@ -54,6 +60,8 @@ public:
 		STOP_REQ_LOOP,
 		FIND_PORT,
 		VOLTAGE,
+		MONITOR_STATUS,
+		MFG_STRING_ONE,
 		REQ_SUPPORTED_MODES
 	};
 	class RequestClass
@@ -104,12 +112,14 @@ public:
 	void clearTroubleCodes();
 	void reqVoltage();
 	void reqSupportedModes();
+	void reqMfgString();
 	void fullPidScan();
 	void singleShotRequest(QByteArray request);
 	void blindSingleShotRequest(QByteArray request);
 	void stopThread() { m_threadRunning = false; }
 	void requestTroubleCodes();
 	void start();
+	void reqMonitorStatus();
 	QString port() { return m_port; }
 	void findObdPort();
 protected:
@@ -150,6 +160,9 @@ private:
 	void setProtocol(int num, bool autosearch);
 
 signals:
+	void monitorTestResults(QList<QString> list);
+	void mfgString(QString string);
+	void liberror(ObdThread::ObdError err);
 	void voltage(double volts);
 	void supportedModes(QList<QString> list);
 	void connected(QString version);
