@@ -62,7 +62,7 @@ void ObdThread::reqMonitorStatus()
 	req.type = MONITOR_STATUS;
 	req.repeat = false;
 	m_reqClassList.append(req);
-	threadLockMutex.unlock()
+	threadLockMutex.unlock();
 }
 
 void ObdThread::disconnect()
@@ -329,7 +329,7 @@ void ObdThread::run()
 				}
 
 				std::vector<unsigned char> replyVector;
-				m_obd->sendObdRequestString("0141\r",5,&replyVector,100,5);)
+				m_obd->sendObdRequestString("0141\r",5,&replyVector,100,5);
 				QString vect2 = "";
 
 				for (int j=0;j<replyVector.size();j++)
@@ -347,23 +347,23 @@ void ObdThread::run()
 				}
 				else
 				{
-					unsigned char one = m_obd->byteArrayToByte(vect2[0],vect2[1]);
-					unsigned char two = m_obd->byteArrayToByte(vect2[2],vect2[3]);
-					unsigned char three = m_obd->byteArrayToByte(vect2[4],vect2[5]);
-					unsigned char four = m_obd->byteArrayToByte(vect2[6],vect2[7]);
+					unsigned char one = m_obd->byteArrayToByte(vect2[0].toAscii(),vect2[1].toAscii());
+					unsigned char two = m_obd->byteArrayToByte(vect2[2].toAscii(),vect2[3].toAscii());
+					unsigned char three = m_obd->byteArrayToByte(vect2[4].toAscii(),vect2[5].toAscii());
+					unsigned char four = m_obd->byteArrayToByte(vect2[6].toAscii(),vect2[7].toAscii());
 					QList<QString> resultlist;
-					QString misfire = (((two >> 0) & 1) ? "1" : "0") + ":" + (((two >> 4) & 1) ? "1" : "0");
-					QString fuelsystem = (((two >> 1) & 1) ? "1" : "0") + ":" + (((two >> 5) & 1) ? "1" : "0");
-					QString component = (((two >> 2) & 1) ? "1" : "0") + ":" + (((two >> 6) & 1) ? "1" : "0");
-					QString reserved = (((two >> 3) & 1) ? "1" : "0") + ":" + (((two >> 7) & 1) ? "1" : "0");
-					QString catalyst = (((three >> 0) & 1) ? "1" : "0") + ":" + (((four >> 0) & 1) ? "1" : "0");
-					QString heatedcat = (((three >> 1) & 1) ? "1" : "0") + ":" + (((four >> 1) & 1) ? "1" : "0");
-					QString evapsys = (((three >> 2) & 1) ? "1" : "0") + ":" + (((four >> 2) & 1) ? "1" : "0");
-					QString secondair = (((three >> 3) & 1) ? "1" : "0") + ":" + (((four >> 3) & 1) ? "1" : "0");
-					QString acrefrig = (((three >> 4) & 1) ? "1" : "0") + ":" + (((four >> 4) & 1) ? "1" : "0");
-					QString oxygensensor = (((three >> 5) & 1) ? "1" : "0") + ":" + (((four >> 5) & 1) ? "1" : "0");
-					QString oxygenheater = (((three >> 6) & 1) ? "1" : "0") + ":" + (((four >> 6) & 1) ? "1" : "0");
-					QString egrsystem = (((three >> 7) & 1) ? "1" : "0") + ":" + (((four >> 7) & 1) ? "1" : "0");
+					QString misfire = QString(((two >> 0) & 1) ? "1" : "0") + ":" + (((two >> 4) & 1) ? "1" : "0");
+					QString fuelsystem = QString(((two >> 1) & 1) ? "1" : "0") + ":" + (((two >> 5) & 1) ? "1" : "0");
+					QString component = QString(((two >> 2) & 1) ? "1" : "0") + ":" + (((two >> 6) & 1) ? "1" : "0");
+					QString reserved = QString(((two >> 3) & 1) ? "1" : "0") + ":" + (((two >> 7) & 1) ? "1" : "0");
+					QString catalyst = QString(((three >> 0) & 1) ? "1" : "0") + ":" + (((four >> 0) & 1) ? "1" : "0");
+					QString heatedcat =QString (((three >> 1) & 1) ? "1" : "0") + ":" + (((four >> 1) & 1) ? "1" : "0");
+					QString evapsys = QString(((three >> 2) & 1) ? "1" : "0") + ":" + (((four >> 2) & 1) ? "1" : "0");
+					QString secondair = QString(((three >> 3) & 1) ? "1" : "0") + ":" + (((four >> 3) & 1) ? "1" : "0");
+					QString acrefrig = QString(((three >> 4) & 1) ? "1" : "0") + ":" + (((four >> 4) & 1) ? "1" : "0");
+					QString oxygensensor = QString(((three >> 5) & 1) ? "1" : "0") + ":" + (((four >> 5) & 1) ? "1" : "0");
+					QString oxygenheater = QString(((three >> 6) & 1) ? "1" : "0") + ":" + (((four >> 6) & 1) ? "1" : "0");
+					QString egrsystem = QString(((three >> 7) & 1) ? "1" : "0") + ":" + (((four >> 7) & 1) ? "1" : "0");
 
 					resultlist.append(misfire);
 					resultlist.append(fuelsystem);
