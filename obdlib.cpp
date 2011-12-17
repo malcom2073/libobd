@@ -219,12 +219,12 @@ bool obdLib::sendObdRequest(const char *req,int len)
 {
 	//Blind request
 	std::vector<byte> reply;
-	return sendObdRequest(req,len,&reply);
+	return sendObdRequestString(req,len,&reply,-1,-1);
 }
 bool obdLib::sendObdRequest(const char *req,int len,int sleeptime)
 {
 	std::vector<byte> reply;
-	return sendObdRequestString(req,len,&reply,sleeptime);
+	return sendObdRequestString(req,len,&reply,sleeptime,-1);
 }
 
 bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *reply)
@@ -273,6 +273,14 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 		//delete totalReply;
 		//m_lastError = SERIALWRITEERROR;
 		//return false;
+	}
+	if (sleeptime == -1)
+	{
+		//Not expecting a reply.
+		delete[] totalReply;
+		delete[] tmp;
+		return true;
+
 	}
 #ifdef WINVER
 	Sleep(sleeptime);
@@ -335,23 +343,33 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 				}	
 			}
 		}
-		if ((time(NULL) - seconds)-(sleeptime / 1000.0) > timeout)
+		if (timeout > 0)
 		{
-			//printf("Time:%i:%i:%i\n",time(NULL) - seconds,(time(NULL) - seconds) - (sleeptime/1000.0),time(NULL));
-			continueLoop = false;
-
-			m_lastError = TIMEOUT;
-			printf("Timeout, current reply state:");
-			for (int i=0;i<loc;i++)
+			if ((time(NULL) - seconds)-(sleeptime / 1000.0) > timeout)
 			{
-				printf("%c",totalReply[i]);
-			}
+				//printf("Time:%i:%i:%i\n",time(NULL) - seconds,(time(NULL) - seconds) - (sleeptime/1000.0),time(NULL));
+				continueLoop = false;
 
-			printf(":\n");
-			printf("Current reply length: %i\n",loc);
+				m_lastError = TIMEOUT;
+				printf("Timeout, current reply state:");
+				for (int i=0;i<loc;i++)
+				{
+					printf("%c",totalReply[i]);
+				}
+
+				printf(":\n");
+				printf("Current reply length: %i\n",loc);
+				delete[] tmp;
+				delete[] totalReply;
+				return false;
+			}
+		}
+		if (timeout == -1)
+		{
+			//Not waiting for a reply.
 			delete[] tmp;
 			delete[] totalReply;
-			return false;
+			return true;
 		}
 	}
 

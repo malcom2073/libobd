@@ -60,6 +60,7 @@ public:
 		STOP_REQ_LOOP,
 		FIND_PORT,
 		VOLTAGE,
+		SWITCH_BAUD,
 		MONITOR_STATUS,
 		MFG_STRING_ONE,
 		REQ_SUPPORTED_MODES
@@ -114,6 +115,7 @@ public:
 	void reqSupportedModes();
 	void reqMfgString();
 	void fullPidScan();
+	void switchBaud();
 	void singleShotRequest(QByteArray request);
 	void blindSingleShotRequest(QByteArray request);
 	void stopThread() { m_threadRunning = false; }

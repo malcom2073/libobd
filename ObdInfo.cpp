@@ -75,6 +75,7 @@ ObdInfo::ObdInfo()
 							pid->labels = reader.attributes().value("labels").toString().toInt();
 							pid->step = reader.attributes().value("step").toString().toInt();
 							pid->stringRep = QString((mode < 16) ? "0" : "").append(QString::number(mode,16).toUpper()).append((pid->pid < 16) ? "0" : "").append(QString::number(pid->pid,16).toUpper());
+							qDebug() << pid->stringRep;
 							pidList.append(pid);
 						}
 						reader.readNext();

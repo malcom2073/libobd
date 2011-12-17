@@ -90,6 +90,16 @@ void ObdThread::requestTroubleCodes()
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
+void ObdThread::switchBaud()
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = SWITCH_BAUD;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+
 void ObdThread::singleShotRequest(QByteArray request)
 {
 	threadLockMutex.lock();
@@ -196,6 +206,7 @@ void ObdThread::run()
 		}
 		for (int i=0;i<m_reqClassList.count();i++)
 		{
+			qDebug() << "Adding req" << m_reqClassList[i].type;
 			m_reqClassListThreaded.prepend(m_reqClassList[i]);
 			m_reqClassFailureMap[&m_reqClassList[i]] = 0;
 			m_whiteList[&m_reqClassList[i]]=false;
@@ -203,6 +214,7 @@ void ObdThread::run()
 		m_reqClassList.clear();
 		threadLockMutex.unlock();
 		first = true;
+		//qDebug() << "Size:" << m_reqClassListThreaded.size();
 		for (int i=0;i<m_reqClassListThreaded.count();i++)
 		{
 			//Handle request here
@@ -211,9 +223,10 @@ void ObdThread::run()
 				if (!m_connect())
 				{
 					qDebug() << "Unable to connect";
-					emit liberror(UNABLE_TO_OPEN_COM_PORT);
+					//emit liberror(UNABLE_TO_OPEN_COM_PORT);
 					continue;
 				}
+				m_obdConnected = true;
 			}
 			else if (m_reqClassListThreaded[i].type == DISCONNECT)
 			{
@@ -302,11 +315,36 @@ void ObdThread::run()
 					emit disconnected();
 				}
 			}
+			else if (m_reqClassListThreaded[i].type == SWITCH_BAUD)
+			{
+				//Switch baud to 38400;
+				if (m_obdConnected)
+				{
+					qDebug() << "Switching baud...";
+					m_obd->sendObdRequest("ATBRD 68\r",9);
+					qDebug() << "Sent request. Closing and reopening port";
+					//usleep(10000);
+
+					m_obd->closePort();
+					msleep(100);
+					m_obd->openPort(m_port.toStdString().c_str(),38400);
+					std::vector<unsigned char> reply;
+					qDebug() << "Sending confirmation";
+					m_obd->sendObdRequestString("\r",1,&reply,1,1);
+					QString vect = "";
+					for (int i=0;i<reply.size();i++)
+					{
+						vect.append(reply.at(i));
+					}
+					qDebug() << "Vect:" << vect;
+				}
+			}
 			else if (m_reqClassListThreaded[i].type == CLEAR_TROUBLE_CODES)
 			{
 				consoleMessage("Trouble Code Clear Requested...");
 				if (!m_obdConnected)
 				{
+					qDebug() << "CONNECT - MONITOR_STATUS";
 					if (!m_connect())
 						continue;
 				}
@@ -320,6 +358,7 @@ void ObdThread::run()
 			}
 			else if (m_reqClassListThreaded[i].type == MONITOR_STATUS)
 			{
+				qDebug() << "MONITOR_STATUS";
 				if (!m_obdConnected)
 				{
 					if (!m_connect())
@@ -329,7 +368,7 @@ void ObdThread::run()
 				}
 
 				std::vector<unsigned char> replyVector;
-				m_obd->sendObdRequestString("0141\r",5,&replyVector,100,5);
+				m_obd->sendObdRequestString("0101\r",5,&replyVector,100,5);
 				QString vect2 = "";
 
 				for (int j=0;j<replyVector.size();j++)
@@ -343,19 +382,52 @@ void ObdThread::run()
 				if (vect2.size() < 8)
 				{
 					qDebug() << "MONITOR_STATUS returned a result too short!" << vect2;
-					continue;
 				}
 				else
 				{
-					unsigned char one = m_obd->byteArrayToByte(vect2[0].toAscii(),vect2[1].toAscii());
-					unsigned char two = m_obd->byteArrayToByte(vect2[2].toAscii(),vect2[3].toAscii());
-					unsigned char three = m_obd->byteArrayToByte(vect2[4].toAscii(),vect2[5].toAscii());
-					unsigned char four = m_obd->byteArrayToByte(vect2[6].toAscii(),vect2[7].toAscii());
+					qDebug() << "MONITOR_STATUS size: " << vect2.size();
+					unsigned char one = m_obd->byteArrayToByte(vect2[4].toAscii(),vect2[5].toAscii());
+					unsigned char two = m_obd->byteArrayToByte(vect2[6].toAscii(),vect2[7].toAscii());
+					unsigned char three = m_obd->byteArrayToByte(vect2[8].toAscii(),vect2[9].toAscii());
+					unsigned char four = m_obd->byteArrayToByte(vect2[10].toAscii(),vect2[11].toAscii());
+					QString onestr;
+					QString twostr;
+					QString threestr;
+					for (int j=0;j<8;j++)
+					{
+						if ((two >> j) & 1)
+						{
+							onestr += "1";
+						}
+						else
+						{
+							onestr += "0";
+						}
+						if ((three >> j) & 1)
+						{
+							twostr += "1";
+						}
+						else
+						{
+							twostr += "0";
+						}
+						if ((four >> j) & 1)
+						{
+							threestr += "1";
+						}
+						else
+						{
+							threestr += "0";
+						}
+					}
+					qDebug() << "Monitor:" << onestr << twostr << threestr;
+					qDebug() << vect2;
+					qDebug() << QString::number(two) << QString::number(three) << QString::number(four);
 					QList<QString> resultlist;
 					QString misfire = QString(((two >> 0) & 1) ? "1" : "0") + ":" + (((two >> 4) & 1) ? "1" : "0");
 					QString fuelsystem = QString(((two >> 1) & 1) ? "1" : "0") + ":" + (((two >> 5) & 1) ? "1" : "0");
 					QString component = QString(((two >> 2) & 1) ? "1" : "0") + ":" + (((two >> 6) & 1) ? "1" : "0");
-					QString reserved = QString(((two >> 3) & 1) ? "1" : "0") + ":" + (((two >> 7) & 1) ? "1" : "0");
+					//	QString reserved = QString(((two >> 3) & 1) ? "1" : "0") + ":" + (((two >> 7) & 1) ? "1" : "0");
 					QString catalyst = QString(((three >> 0) & 1) ? "1" : "0") + ":" + (((four >> 0) & 1) ? "1" : "0");
 					QString heatedcat =QString (((three >> 1) & 1) ? "1" : "0") + ":" + (((four >> 1) & 1) ? "1" : "0");
 					QString evapsys = QString(((three >> 2) & 1) ? "1" : "0") + ":" + (((four >> 2) & 1) ? "1" : "0");
@@ -368,7 +440,7 @@ void ObdThread::run()
 					resultlist.append(misfire);
 					resultlist.append(fuelsystem);
 					resultlist.append(component);
-					resultlist.append(reserved);
+					//resultlist.append(reserved);
 					resultlist.append(catalyst);
 					resultlist.append(heatedcat);
 					resultlist.append(evapsys);
@@ -382,6 +454,7 @@ void ObdThread::run()
 				}
 				if (!m_obdConnected)
 				{
+					qDebug() << "DISCONNECT - MONITOR_STATUS";
 					emit consoleMessage(QString("Disconnected"));
 					m_obd->closePort();
 					emit disconnected();
@@ -1010,6 +1083,7 @@ void ObdThread::run()
 			}
 			else if (m_reqClassListThreaded[i].type == MODE_PID)
 			{
+				//qDebug() << "MODE_PID";
 				if (m_obdConnected)
 				{
 					if (first)
@@ -1127,9 +1201,9 @@ void ObdThread::run()
 			}
 		}
 		removePidMutex.unlock();
-		if (m_reqClassListThreaded.size() == 0)
+		if (m_reqClassListThreaded.size() == 0 || !m_obdConnected)
 		{
-			msleep(100);
+			msleep(200);
 		}
 	}
 }
@@ -1577,17 +1651,18 @@ bool ObdThread::m_connect()
 	if (m_obd->openPort(m_port.toStdString().c_str(),m_baud) < 0)
 	{
 		qDebug() << "Error opening OBD Port";
+		emit liberror(ObdThread::UNABLE_TO_OPEN_COM_PORT);
 		return false;
 	}
 	if (!initElm())
 	{
 		emit consoleMessage("Error in ELM init, port not opened");
 		m_obd->closePort();
-		emit disconnected();
+		//emit disconnected();
 		//continue;
 		return false;
 	}
-	m_obdConnected = true;
+	//m_obdConnected = true;
 	QString version = getElmVersion().replace("\r","").replace("\n","");
 	emit consoleMessage(QString("Elm found. Version: ").append(version));
 	qDebug() << "Connected to ELM version" << version;
