@@ -104,24 +104,24 @@ public:
 	void setBaud(int baud);
 	void addRequest(int mode, int pid, int priority,int wait);
 	void removeRequest(int mode, int pid, int priority);
-	void getSupportedPids();
+	void sendReqSupportedPids();
 	//void setInfo(ObdInfo *info) { m_obdInfo = info; }
 	ObdInfo *getInfo() { return m_obdInfo; }
 	void connect();
 	void disconnect();
 	void clearReqList();
-	void clearTroubleCodes();
-	void reqVoltage();
-	void reqSupportedModes();
-	void reqMfgString();
-	void fullPidScan();
+	void sendClearTroubleCodes();
+	void sendReqVoltage();
+	void sendReqSupportedModes();
+	void sendReqMfgString();
+	void sendReqFullPidScan();
 	void switchBaud();
-	void singleShotRequest(QByteArray request);
-	void blindSingleShotRequest(QByteArray request);
+	void sendSingleShotRequest(QByteArray request);
+	void sendSingleShotBlindRequest(QByteArray request);
 	void stopThread() { m_threadRunning = false; }
-	void requestTroubleCodes();
+	void sendReqTroubleCodes();
 	void start();
-	void reqMonitorStatus();
+	void sendReqMonitorStatus();
 	QString port() { return m_port; }
 	void findObdPort();
 protected:
@@ -162,21 +162,21 @@ private:
 	void setProtocol(int num, bool autosearch);
 
 signals:
-	void monitorTestResults(QList<QString> list);
-	void mfgString(QString string);
+	void monitorTestReply(QList<QString> list);
+	void mfgStringReply(QString string);
 	void liberror(ObdThread::ObdError err);
-	void voltage(double volts);
-	void supportedModes(QList<QString> list);
+	void voltageReply(double volts);
+	void supportedModesReply(QList<QString> list);
 	void connected(QString version);
 	void disconnected();
 	void reqLoopStarted();
 	void reqLoopStopped();
-	void pidReceived(QString pid,QString val,int set,double time);
-	void singleShotResponse(QByteArray request, QByteArray list);
-	void supportedPids(QList<QString> list);
-	void troubleCodes(QList<QString> codes);
+	void pidReply(QString pid,QString val,int set,double time);
+	void singleShotReply(QByteArray request, QByteArray list);
+	void supportedPidsReply(QList<QString> list);
+	void troubleCodesReply(QList<QString> codes);
 	void consoleMessage(QString message);
 	void obdPortFound(QString portname);
-	void protocolFound(QString protocol);
+	void protocolReply(QString protocol);
 };
 #endif //OBDTHREAD_H

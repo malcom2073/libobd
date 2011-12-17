@@ -55,7 +55,7 @@ void ObdThread::start()
 	m_threadRunning = true;
 	QThread::start();
 }
-void ObdThread::reqMonitorStatus()
+void ObdThread::sendReqMonitorStatus()
 {
 	threadLockMutex.lock();
 	RequestClass req;
@@ -80,7 +80,7 @@ void ObdThread::clearReqList()
 	m_reqClassListThreaded.clear();
 	removePidMutex.unlock();
 }
-void ObdThread::requestTroubleCodes()
+void ObdThread::sendReqTroubleCodes()
 {
 	qDebug() << "Trouble codes request...";
 	threadLockMutex.lock();
@@ -100,7 +100,7 @@ void ObdThread::switchBaud()
 	threadLockMutex.unlock();
 }
 
-void ObdThread::singleShotRequest(QByteArray request)
+void ObdThread::sendSingleShotRequest(QByteArray request)
 {
 	threadLockMutex.lock();
 	RequestClass req;
@@ -110,7 +110,7 @@ void ObdThread::singleShotRequest(QByteArray request)
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
-void ObdThread::reqVoltage()
+void ObdThread::sendReqVoltage()
 {
 	threadLockMutex.lock();
 	RequestClass req;
@@ -119,7 +119,7 @@ void ObdThread::reqVoltage()
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
-void ObdThread::reqMfgString()
+void ObdThread::sendReqMfgString()
 {
 	threadLockMutex.lock();
 	RequestClass req;
@@ -129,7 +129,7 @@ void ObdThread::reqMfgString()
 	threadLockMutex.unlock();
 }
 
-void ObdThread::reqSupportedModes()
+void ObdThread::sendReqSupportedModes()
 {
 	threadLockMutex.lock();
 	RequestClass req;
@@ -139,7 +139,7 @@ void ObdThread::reqSupportedModes()
 	threadLockMutex.unlock();
 }
 
-void ObdThread::blindSingleShotRequest(QByteArray request)
+void ObdThread::sendSingleShotBlindRequest(QByteArray request)
 {
 	threadLockMutex.lock();
 	RequestClass req;
@@ -262,7 +262,7 @@ void ObdThread::run()
 					//emit singleShotResponse(m_reqClassListThreaded[i].custom,replyArray);
 					//emit voltage()
 					//qDebug() << replyArray;
-					emit voltage(QString(replyArray).toDouble());
+					emit voltageReply(QString(replyArray).toDouble());
 				}
 				if (!m_obdConnected)
 				{
@@ -307,7 +307,7 @@ void ObdThread::run()
 					replyArray.append(reply[j]);
 				}
 				//emit singleShotResponse(m_reqClassListThreaded[i].custom,replyArray);
-				emit supportedModes(modelist);
+				emit supportedModesReply(modelist);
 				if (!m_obdConnected)
 				{
 					emit consoleMessage(QString("Disconnected"));
@@ -449,7 +449,7 @@ void ObdThread::run()
 					resultlist.append(oxygensensor);
 					resultlist.append(oxygenheater);
 					resultlist.append(egrsystem);
-					emit monitorTestResults(resultlist);
+					emit monitorTestReply(resultlist);
 
 				}
 				if (!m_obdConnected)
@@ -483,7 +483,7 @@ void ObdThread::run()
 					}
 					//vect2 += replyVector[j];
 				}
-				emit mfgString(vect2);
+				emit mfgStringReply(vect2);
 				if (!m_obdConnected)
 				{
 					emit consoleMessage(QString("Disconnected"));
@@ -528,7 +528,7 @@ void ObdThread::run()
 					{
 						//Nodata on trouble codes means there are none available to read.
 						emit consoleMessage("No trouble codes");
-						emit troubleCodes(QList<QString>());
+						emit troubleCodesReply(QList<QString>());
 						m_reqClassFailureMap.remove(&m_reqClassListThreaded[i]);
 						m_reqClassListThreaded.removeAt(i);
 						//continue;
@@ -766,7 +766,7 @@ void ObdThread::run()
 					}
 				}*/
 				//qDebug() << "Done with trouble codes";
-				troubleCodes(codes);
+				troubleCodesReply(codes);
 				//qDebug() <<
 				/*if (!m_obdConnected)
 				{
@@ -809,7 +809,7 @@ void ObdThread::run()
 				{
 					replyArray.append(reply[j]);
 				}
-				emit singleShotResponse(m_reqClassListThreaded[i].custom,replyArray);
+				emit singleShotReply(m_reqClassListThreaded[i].custom,replyArray);
 				if (!m_obdConnected)
 				{
 					emit consoleMessage(QString("Disconnected"));
@@ -890,7 +890,7 @@ void ObdThread::run()
 						}
 					}
 				}
-				supportedPids(pidList);
+				supportedPidsReply(pidList);
 				if (!m_obdConnected)
 				{
 					emit consoleMessage(QString("Disconnected"));
@@ -1069,7 +1069,7 @@ void ObdThread::run()
 				}
 
 
-				emit supportedPids(pids);
+				emit supportedPidsReply(pids);
 
 				if (!m_obdConnected)
 				{
@@ -1181,7 +1181,7 @@ void ObdThread::run()
 								}
 								QString done = parse(func);
 								//qDebug() <<"firing pid: "<<pidreq<<" val: "<<done;
-								pidReceived(pidreq,done,cycleCounter,(((float)QDateTime::currentDateTime().toTime_t()) + ((float)QDateTime::currentDateTime().time().msec() / 1000.0)));
+								pidReply(pidreq,done,cycleCounter,(((float)QDateTime::currentDateTime().toTime_t()) + ((float)QDateTime::currentDateTime().time().msec() / 1000.0)));
 							}
 							else
 							{
@@ -1231,7 +1231,7 @@ void ObdThread::addRequest(int mode, int pid, int priority,int wait)
 	threadLockMutex.unlock();
 }
 
-void ObdThread::getSupportedPids()
+void ObdThread::sendReqSupportedPids()
 {
 	threadLockMutex.lock();
 	RequestClass req;
@@ -1239,7 +1239,7 @@ void ObdThread::getSupportedPids()
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
-void ObdThread::fullPidScan()
+void ObdThread::sendReqFullPidScan()
 {
 	threadLockMutex.lock();
 	RequestClass req;
@@ -1247,7 +1247,7 @@ void ObdThread::fullPidScan()
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
-void ObdThread::clearTroubleCodes()
+void ObdThread::sendClearTroubleCodes()
 {
 	threadLockMutex.lock();
 	RequestClass req;
@@ -1669,7 +1669,7 @@ bool ObdThread::m_connect()
 	setProtocol(0,false);
 	QString protocol = getProtocolName().replace("\r","").replace("\n","");
 	qDebug() << "Connected protocol:" << protocol;
-	emit protocolFound(protocol);
+	emit protocolReply(protocol);
 	emit connected(version);
 	return true;
 }
