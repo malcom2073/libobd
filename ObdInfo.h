@@ -22,6 +22,8 @@
 #define OBDINFO_H
 #include <QString>
 #include <QList>
+
+
 class ObdInfo
 {
 public:
@@ -40,9 +42,31 @@ public:
 		int labels;
 		int step;
 	};
+	struct ModeSixInfo
+	{
+		QString description;
+		int id;
+	};
+	struct ModeSixScalers
+	{
+		QString description;
+		QString units;
+		int min;
+		int max;
+		double multiplier;
+		int usaid;
+		int offset;
+	};
+
 	QList<Pid*> pidList;
+	QList<ModeSixScalers> modeSixScalerList;
+	QList<ModeSixInfo> modeSixInfoList;
+	QList<ModeSixInfo> modeSixTestList;
 	Pid *getPidFromString(QString str);
 	Pid *getPidFromBytes(int mode,int pid);
+	ModeSixInfo getInfoFromByte(int obdmid);
+	ModeSixInfo getTestFromByte(int tid);
+	ModeSixScalers getScalerFromByte(int UASID);
 	static int intFromHex(QString num);
 };
 #endif //OBDINFO_H

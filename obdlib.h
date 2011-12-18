@@ -98,9 +98,10 @@ public:
 	void flush();
 	//byte* sendRequest(byte *reqString,int length);
 //	byte* sendRequest(char *asciiReqString, int length);
-	byte byteArrayToByte(byte b1, byte b2);
+	static byte byteArrayToByte(byte b1, byte b2);
 	std::string getVersion() { return versionString; }
 	bool sendObdRequest(const char *req,int len,std::vector<byte> *reply);
+	bool sendObdRequest(const char *req,int length,std::vector<byte> *reply,int sleep, int timeout);
 	bool sendObdRequestString(const char *req,int len,std::vector<byte> *reply,int sleeptime);
 	bool sendObdRequestString(const char *req,int length,std::vector<byte> *reply,int sleeptime, int timeout);
 	bool sendObdRequestString(const char *req,int len,std::vector<byte> *reply);

@@ -63,6 +63,7 @@ public:
 		SWITCH_BAUD,
 		MONITOR_STATUS,
 		MFG_STRING_ONE,
+		ON_BOARD_MONITORS,
 		REQ_SUPPORTED_MODES
 	};
 	class RequestClass
@@ -111,6 +112,7 @@ public:
 	void disconnect();
 	void clearReqList();
 	void sendClearTroubleCodes();
+	void sendReqOnBoardMonitors();
 	void sendReqVoltage();
 	void sendReqSupportedModes();
 	void sendReqMfgString();

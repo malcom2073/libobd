@@ -402,9 +402,14 @@ obdLib::ObdError obdLib::lastError()
 }
 bool obdLib::sendObdRequest(const char *req,int length,std::vector<byte> *reply)
 {
+	return sendObdRequest(req,length,reply,100,5);
+}
+
+bool obdLib::sendObdRequest(const char *req,int length,std::vector<byte> *reply,int sleep, int timeout)
+{
 	reply->clear();
 	std::vector<byte> tmpReply;
-	if (!sendObdRequestString(req,length,&tmpReply))
+	if (!sendObdRequestString(req,length,&tmpReply,sleep,timeout))
 	{
 		return false;
 	}

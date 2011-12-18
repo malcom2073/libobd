@@ -99,6 +99,15 @@ void ObdThread::switchBaud()
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
+void ObdThread::sendReqOnBoardMonitors()
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = ON_BOARD_MONITORS;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
 
 void ObdThread::sendSingleShotRequest(QByteArray request)
 {
@@ -308,6 +317,228 @@ void ObdThread::run()
 				}
 				//emit singleShotResponse(m_reqClassListThreaded[i].custom,replyArray);
 				emit supportedModesReply(modelist);
+				if (!m_obdConnected)
+				{
+					emit consoleMessage(QString("Disconnected"));
+					m_obd->closePort();
+					emit disconnected();
+				}
+			}
+			else if (m_reqClassListThreaded[i].type == ON_BOARD_MONITORS)
+			{
+				if (!m_obdConnected)
+				{
+					if (!m_connect())
+						continue;
+				}
+				std::vector<unsigned char> reply;
+				QByteArray reply00;
+				QByteArray reply20;
+				QByteArray reply40;
+				QByteArray reply60;
+				QByteArray reply80;
+				QByteArray replyA0;
+				QList<unsigned char> pids;
+				//QByteArray pids;
+				unsigned int var = 0;
+				for (int k=0;k<0xC0;k+=0x20)
+				{
+					QString newreq = QString(QString("06") + ((k == 0) ? "00" : QString::number(k,16)) + "\r");
+					qDebug() << "Requesting:" << newreq;
+					if (m_obd->sendObdRequest(newreq.toStdString().c_str(),5,&reply))
+					{
+						var = (((unsigned int)reply[2] << 24) + ((unsigned int)reply[3] << 16) + ((unsigned int)reply[4] << 8) + (unsigned int)reply[5]);
+						qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
+						for (int j=1;j<0x20;j++)
+						{
+							if (((var >> (0x20-j)) & 1))
+							{
+								qDebug() << "Pid " << j << "enabled";
+								pids.append(j + k);
+							}
+							else
+							{
+								qDebug() << "pid" << j << "disabled";
+							}
+						}
+
+					}
+				}
+				/*
+				if (m_obd->sendObdRequest("0600\r",5,&reply))
+				{
+					var = (((unsigned int)reply[2] << 24) + ((unsigned int)reply[3] << 16) + ((unsigned int)reply[4] << 8) + (unsigned int)reply[5]);
+					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
+					for (int j=1;j<0x20;j++)
+					{
+						if (((var >> (0x20-j)) & 1))
+						{
+							qDebug() << "Pid " << j << "enabled";
+							pids.append(j);
+						}
+						else
+						{
+							qDebug() << "pid" << j << "disabled";
+						}
+					}
+
+				}
+				if (m_obd->sendObdRequest("0620\r",5,&reply))
+				{
+					var = (((unsigned int)reply[2] << 24) + ((unsigned int)reply[3] << 16) + ((unsigned int)reply[4] << 8) + (unsigned int)reply[5]);
+					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
+					for (int j=1;j<0x20;j++)
+					{
+						if (((var >> (0x20-j)) & 1))
+						{
+							pids.append(j+0x20);
+						}
+					}
+				}
+				if (m_obd->sendObdRequest("0640\r",5,&reply))
+				{
+					var = (((unsigned int)reply[2] << 24) + ((unsigned int)reply[3] << 16) + ((unsigned int)reply[4] << 8) + (unsigned int)reply[5]);
+					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
+					for (int j=1;j<0x20;j++)
+					{
+						if (((var >> (0x20-j)) & 1))
+						{
+							pids.append(j+0x40);
+						}
+					}
+				}
+				if (m_obd->sendObdRequest("0660\r",5,&reply))
+				{
+					var = (((unsigned int)reply[2] << 24) + ((unsigned int)reply[3] << 16) + ((unsigned int)reply[4] << 8) + (unsigned int)reply[5]);
+					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
+					for (int j=1;j<0x20;j++)
+					{
+						if (((var >> (0x20-j)) & 1))
+						{
+							pids.append(j+0x60);
+						}
+					}
+				}
+				if (m_obd->sendObdRequest("0680\r",5,&reply))
+				{
+					var = (((unsigned int)reply[5] << 24) + ((unsigned int)reply[4] << 16) + ((unsigned int)reply[3] << 8) + (unsigned int)reply[2]);
+					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
+					for (int j=1;j<0x20;j++)
+					{
+						if (((var >> (j)) & 1))
+						{
+							pids.append((j-1)+0x80);
+						}
+					}
+				}
+				if (m_obd->sendObdRequest("06A0\r",5,&reply))
+				{
+					var = (((unsigned int)reply[5] << 24) + ((unsigned int)reply[4] << 16) + ((unsigned int)reply[3] << 8) + (unsigned int)reply[2]);
+					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
+					for (int j=1;j<0x20;j++)
+					{
+						if (((var >> (j)) & 1))
+						{
+							pids.append((j-1)+0xA0);
+							qDebug() << "Pid Enabled" << j+0xA0;
+						}
+					}
+				}*/
+				if (!m_obd->sendObdRequest("ATH1\r",5,&reply))
+				{
+					qDebug() << "Unable to enable headers";
+				}
+				qDebug() << "ON_BOARD MONITORS";
+				qDebug() << pids.size() << "monitors enabled";
+				for (int j=0;j<pids.size();j++)
+				{
+					QString reqstr = (QString("06") + ((pids[j] < 16) ? "0" : "") + QString::number(pids[j],16).toUpper() + "\r");
+					qDebug() << "Request:" << reqstr << QString::number(pids[j]);
+					m_obd->sendObdRequestString(reqstr.toStdString().c_str(),5,&reply,100,5);
+					QString response="";
+					for (int k=0;k<reply.size();k++)
+					{
+						//response += QString::number(reply[k],16).toUpper();
+						response += reply[k];
+					}
+					qDebug() << "Response:" << response;
+					QString req = "0601\r";
+					//QString response = ;
+					response = response.mid(10);
+					QStringList responsesplit = response.split("7E8");
+					QString total = "";
+					for (int k=0;k<responsesplit.size();k++)
+					{
+						//qDebug() << responsesplit[i];
+						if (responsesplit[k].length() > 0)
+						{
+							QString line = responsesplit[k];
+							line = line.replace(" ","");
+							line = line.mid(2);
+							//qDebug() << "Line:" << line;
+							total += line;
+						}
+					}
+					//qDebug() << "Final" << total;
+					for (int k=0;k<total.length();k++)
+					{
+						if (total.length() > k+18)
+						{
+							QString name = total.mid(k,4);
+							k+= 4;
+							QString type = total.mid(k,2);
+							unsigned char obdmidchar = obdLib::byteArrayToByte(name[0].toAscii(),name[1].toAscii());
+							unsigned char obdtidchar = obdLib::byteArrayToByte(name[2].toAscii(),name[1].toAscii());
+							unsigned char typechar = obdLib::byteArrayToByte(type[0].toAscii(),type[1].toAscii());
+
+							k+=2;
+							QString val = total.mid(k,4);
+							unsigned int valb=0;
+							valb += obdLib::byteArrayToByte(val[0].toAscii(),val[1].toAscii()) << 8;
+							valb += obdLib::byteArrayToByte(val[2].toAscii(),val[3].toAscii());
+							//qDebug() << QString::number(typechar,16);
+
+							ObdInfo::ModeSixScalers scaler = getInfo()->getScalerFromByte(typechar);
+							ObdInfo::ModeSixInfo info = getInfo()->getInfoFromByte(obdmidchar);
+							ObdInfo::ModeSixInfo test = getInfo()->getTestFromByte(obdtidchar);
+							if (test.id == 0)
+							{
+								//MFG Test
+								qDebug() << info.description << "MFG Test";
+							}
+							else
+							{
+								qDebug() << info.description << test.description;
+							}
+							double newval = ((valb * scaler.multiplier) + scaler.offset);
+							qDebug() << QString::number(obdtidchar,16);
+							qDebug() << valb << scaler.multiplier << newval << scaler.units;
+
+
+							//63,658
+							//50,536
+							//value -4222
+							//min -30000
+							//max 0
+							//minimum -FFFF
+							//max FFFF
+							//1.68453333333
+							//qDebug() << QString::number(valb[0],16) << QString::number(valb[1],16);
+							//qDebug() << "Valb" << valb.toFloat();
+
+							k+=4;
+							QString min = total.mid(k,4);
+							k+=4;
+							QString max = total.mid(k,4);
+							k += 3;
+							//qDebug() << name << type << val << something << some2;
+						}
+					}
+				}
+				if (!m_obd->sendObdRequest("ATH0\r",5,&reply))
+				{
+					qDebug() << "Unable to disable headers";
+				}
 				if (!m_obdConnected)
 				{
 					emit consoleMessage(QString("Disconnected"));
@@ -1091,7 +1322,7 @@ void ObdThread::run()
 						first = false;
 						cycleCounter++;
 					}
-					if ((cycleCounter % m_reqClassListThreaded[i].priority) == 0)
+					if (((cycleCounter % m_reqClassListThreaded[i].priority) == 0) || cycleCounter == 0)
 					{
 						//qDebug() << "Making req" << m_reqList[currentReqNum].mid(0,m_reqList[currentReqNum].length()-1) << m_set << m_reqPriority[currentReqNum] << currentReqNum;
 						//if (!m_obd->sendObdRequest(m_reqList[currentReqNum].toStdString().c_str(),m_reqList[currentReqNum].length(),&replyVector))
