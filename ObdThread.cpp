@@ -30,6 +30,7 @@ ObdThread::ObdThread(QObject *parent) : QThread(parent)
 {
 	qRegisterMetaType<QList<QString> >("QList<QString>");
 	qRegisterMetaType<ObdThread::ObdError>("ObdThread::ObdError");
+	qRegisterMetaType<QList<unsigned char> >("QList<unsigned char>");
 	m_obd = new obdLib();
 	m_threadRunning = false;
 	m_requestLoopRunning = false;
@@ -177,6 +178,18 @@ void ObdThread::removeRequest(int mode, int pid, int priority)
 	m_reqClassRemoveList.append(req);
 	threadLockMutex.unlock();
 }
+void ObdThread::addRequest(RequestClass req)
+{
+	threadLockMutex.lock();
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+void ObdThread::removeRequest(RequestClass req)
+{
+	threadLockMutex.lock();
+	m_reqClassRemoveList.append(req);
+	threadLockMutex.unlock();
+}
 
 void ObdThread::run()
 {
@@ -205,7 +218,7 @@ void ObdThread::run()
 			{
 				if ((m_reqClassRemoveList[i].mode == m_reqClassListThreaded[j].mode) && (m_reqClassRemoveList[i].pid == m_reqClassListThreaded[j].pid) && (m_reqClassRemoveList[i].type == m_reqClassListThreaded[j].type))
 				{
-					m_reqClassFailureMap.remove(&m_reqClassListThreaded[i]);
+					m_reqClassFailureMap.remove(&m_reqClassListThreaded[j]);
 					m_reqClassListThreaded.removeAt(j);
 					m_reqClassRemoveList.removeAt(i);
 					j--;
@@ -241,6 +254,13 @@ void ObdThread::run()
 			{
 				qDebug() << "Disconnected from ELM";
 				m_obd->closePort();
+				threadLockMutex.unlock();
+
+				//for (int j=0;j<m_reqClassListThreaded.count();j++)
+				//{
+					//m_reqClassListThreaded.removeAll();
+				//}
+				threadLockMutex.unlock();
 				m_obdConnected = false;
 				emit disconnected();
 
@@ -450,6 +470,11 @@ void ObdThread::run()
 				}
 				qDebug() << "ON_BOARD MONITORS";
 				qDebug() << pids.size() << "monitors enabled";
+				QList<QString> minlist;
+				QList<QString> maxlist;
+				QList<unsigned char> tidlist;
+				QList<unsigned char> midlist;
+				QList<QString> vallist;
 				for (int j=0;j<pids.size();j++)
 				{
 					QString reqstr = (QString("06") + ((pids[j] < 16) ? "0" : "") + QString::number(pids[j],16).toUpper() + "\r");
@@ -458,30 +483,26 @@ void ObdThread::run()
 					QString response="";
 					for (int k=0;k<reply.size();k++)
 					{
-						//response += QString::number(reply[k],16).toUpper();
 						response += reply[k];
 					}
-					qDebug() << "Response:" << response;
-					QString req = "0601\r";
-					//QString response = ;
+					//qDebug() << "Response:" << response;
 					response = response.mid(10);
-					QStringList responsesplit = response.split("7E8");
+					QStringList responsesplit = response.replace("\r","").replace("\n","").split("7E8");
 					QString total = "";
 					for (int k=0;k<responsesplit.size();k++)
 					{
-						//qDebug() << responsesplit[i];
 						if (responsesplit[k].length() > 0)
 						{
 							QString line = responsesplit[k];
 							line = line.replace(" ","");
 							line = line.mid(2);
-							//qDebug() << "Line:" << line;
-							total += line;
+							total += line.replace("\r","").replace("\n","");
 						}
 					}
-					//qDebug() << "Final" << total;
+
 					for (int k=0;k<total.length();k++)
 					{
+						qDebug() << total.mid(k);
 						if (total.length() > k+18)
 						{
 							QString name = total.mid(k,4);
@@ -490,13 +511,15 @@ void ObdThread::run()
 							unsigned char obdmidchar = obdLib::byteArrayToByte(name[0].toAscii(),name[1].toAscii());
 							unsigned char obdtidchar = obdLib::byteArrayToByte(name[2].toAscii(),name[1].toAscii());
 							unsigned char typechar = obdLib::byteArrayToByte(type[0].toAscii(),type[1].toAscii());
-
+							midlist.append(obdmidchar);
+							tidlist.append(obdtidchar);
 							k+=2;
 							QString val = total.mid(k,4);
 							unsigned int valb=0;
 							valb += obdLib::byteArrayToByte(val[0].toAscii(),val[1].toAscii()) << 8;
 							valb += obdLib::byteArrayToByte(val[2].toAscii(),val[3].toAscii());
-							//qDebug() << QString::number(typechar,16);
+							//qDebug() << "MID:" << QString::number(obdmidchar,16);
+							//qDebug() << "TID:" << QString::number(obdtidchar,16);
 
 							ObdInfo::ModeSixScalers scaler = getInfo()->getScalerFromByte(typechar);
 							ObdInfo::ModeSixInfo info = getInfo()->getInfoFromByte(obdmidchar);
@@ -504,37 +527,28 @@ void ObdThread::run()
 							if (test.id == 0)
 							{
 								//MFG Test
-								qDebug() << info.description << "MFG Test";
+							//	qDebug() << info.description << "MFG Test";
 							}
 							else
 							{
-								qDebug() << info.description << test.description;
+							//	qDebug() << info.description << test.description;
 							}
 							double newval = ((valb * scaler.multiplier) + scaler.offset);
-							qDebug() << QString::number(obdtidchar,16);
-							qDebug() << valb << scaler.multiplier << newval << scaler.units;
+							vallist.append(QString::number(newval));
 
-
-							//63,658
-							//50,536
-							//value -4222
-							//min -30000
-							//max 0
-							//minimum -FFFF
-							//max FFFF
-							//1.68453333333
-							//qDebug() << QString::number(valb[0],16) << QString::number(valb[1],16);
-							//qDebug() << "Valb" << valb.toFloat();
-
+							//qDebug() << valb << scaler.multiplier << newval << scaler.units;
 							k+=4;
 							QString min = total.mid(k,4);
 							k+=4;
 							QString max = total.mid(k,4);
 							k += 3;
-							//qDebug() << name << type << val << something << some2;
+							minlist.append(QString::number((min.toInt() * scaler.multiplier) + scaler.offset));
+							maxlist.append(QString::number((max.toInt() * scaler.multiplier) + scaler.offset));
 						}
 					}
 				}
+				emit onBoardMonitoringReply(midlist,tidlist,vallist,minlist,maxlist);
+				//void onBoardMonitoringReply(QList<QString> midlist,QList<QString> tidlist,QList<QString> vallist,QList<QString> minlist,QList<QString> maxlist);
 				if (!m_obd->sendObdRequest("ATH0\r",5,&reply))
 				{
 					qDebug() << "Unable to disable headers";

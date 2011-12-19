@@ -23,13 +23,15 @@
 #include <QString>
 #include <QList>
 
-
 class ObdInfo
 {
 public:
 	ObdInfo();
-	struct Pid
+	class Pid
 	{
+	public:
+		Pid(unsigned char amode,unsigned char apid,QString aname,QString adescription,QString aunit,QString afunction,QString astringrep,float amin, float amax,bool abitencoded);
+		Pid();
 		QString stringRep;
 		QString name;
 		QString description;
@@ -41,7 +43,9 @@ public:
 		unsigned char pid;
 		int labels;
 		int step;
+		bool bitencoded;
 	};
+
 	struct ModeSixInfo
 	{
 		QString description;

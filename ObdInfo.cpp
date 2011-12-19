@@ -39,12 +39,14 @@ ObdInfo::ObdInfo()
 		qDebug() << "Error! No obd2data.dat file found! Expect a segfault";
 		return;
 	}
+	/*
 	QFile file(filename);
 	if (!file.open(QIODevice::ReadOnly))
 	{
 		qDebug() << "Unable to open obd2data.dat file! Expect a segfault";
 		return;
 	}
+
 	QXmlStreamReader reader(file.readAll());
 	file.close();
 	int mode;
@@ -86,6 +88,75 @@ ObdInfo::ObdInfo()
 		}
 		reader.readNext();
 	}
+
+	*/
+
+	//Hardcoded OBD2 pids:
+	/*Pid *pid0104 = new Pid();
+	pid0104->name = "Load";
+	pid0104->description = "Calculated Engine Load";
+	pid0104->unit = "%";
+	pid0104->min = 00;
+	pid0104->max = 100;
+	pid0104->pid = 0x04;
+	pid0104->mode = 0x01;
+	pid0104->function = "A*(100/255)";
+	pid0104->stringRep = "0104";
+	pidList.append(pid0104);
+
+	Pid *pid0105 = new Pid();
+	pid0105->name = "Temp";
+	pid0105->description = "Coolant Temperature";
+	pid0105->unit = "C";
+	pid0105->min = -40;
+	pid0105->max = 215;
+	pid0105->pid = 0x05;
+	pid0105->mode = 0x01;
+	pid0105->function = "A-40";
+	pid0105->stringRep = "0105";
+	pidList.append(pid0105);
+	//Pid("Temp","Coolant Temperature","C",-40,215,0x01,0x05,"A-40",0105)
+	Pid *pid0106 = new Pid();
+*/
+	pidList.append(new Pid(0x01,0x00,"SupportedPids","Supported Pids 0x00-0x1F","","","0100",0,0,true));
+	pidList.append(new Pid(0x01,0x01,"MonitorStatus","Monitor Status since DTC Cleared","","","0101",0,0,true));
+	pidList.append(new Pid(0x01,0x02,"FreezeDTC","Freeze Frames DTC Codes","","","0102",0,0,true));
+	pidList.append(new Pid(0x01,0x03,"Fuel Status","Fuel System Status","","","0103",0,0,true));
+	pidList.append(new Pid(0x01,0x04,"Load","Calculated Engine Load","%","A*(100/255)","0104",0,100,false));
+	pidList.append(new Pid(0x01,0x05,"Temp","Coolant Temperature","C","A-40","0105",-40,215,false));
+	pidList.append(new Pid(0x01,0x06,"STFT-B1","Short Term Fuel Trim - Bank 1","%","(A-128)*100/128","0106",-100,100,false));
+	pidList.append(new Pid(0x01,0x07,"LTFT-B1","Long Term Fuel Trim - Bank 1","%","(A-128)*100/128","0107",-100,100,false));
+	pidList.append(new Pid(0x01,0x08,"STFT-B2","Short Term Fuel Trim - Bank 2","%","(A-128)*100/128","0108",-100,100,false));
+	pidList.append(new Pid(0x01,0x09,"LTFT-B2","Long Term Fuel Trim - Bank 2","%","(A-128)*100/128","0109",-100,100,false));
+	pidList.append(new Pid(0x01,0x0A,"Fuel Pressure","Fuel Pressure","kPa","A*3","010A",0,765,false));
+	pidList.append(new Pid(0x01,0x0B,"MAP","Manifold Absolute Pressure","kPa","A","010B",0,255,false));
+	pidList.append(new Pid(0x01,0x0C,"RPM","Engine Speed","rpm","((A*256) + B) / 4","010C",0,17000,false));
+	pidList.append(new Pid(0x01,0x0D,"Speed","Vehicle Speed","kph","A","010D",0,255,false));
+	pidList.append(new Pid(0x01,0x0E,"Timing","Timing Advance","degrees","(A/2)-64","010E",-64,64,false));
+	pidList.append(new Pid(0x01,0x0F,"Intake Air","Intake Air Temp","C","A-40","010F",-40,215,false));
+	pidList.append(new Pid(0x01,0x10,"MAF","Mass Air Flow","g/s","((A*256) + B) / 100","0110",0,656,false));
+	pidList.append(new Pid(0x01,0x11,"Throttle","Throttle Position","%","A*(100/255)","0111",0,100,false));
+	pidList.append(new Pid(0x01,0x12,"Secondary Air","Commanded Secondary Air Status","b","","0112",0,0,true));
+	pidList.append(new Pid(0x01,0x13,"O2 Sensors Present","Oxygen Sensors Present","","","0113",0,0,true));
+	pidList.append(new Pid(0x01,0x14,"O2B1S1Voltage","Bank 1 Sensor 1 O2 Voltage","","","0114",0,0,true));
+	pidList.append(new Pid(0x01,0x15,"O2B1S2Voltage","Bank 1 Sensor 2 O2 Voltage","","","0115",0,0,true));
+	pidList.append(new Pid(0x01,0x16,"O2B1S3Voltage","Bank 1 Sensor 3 O2 Voltage","","","0116",0,0,true));
+	pidList.append(new Pid(0x01,0x17,"O2B1S4Voltage","Bank 1 Sensor 4 O2 Voltage","","","0117",0,0,true));
+	pidList.append(new Pid(0x01,0x18,"O2B2S1Voltage","Bank 2 Sensor 1 O2 Voltage","","","0118",0,0,true));
+	pidList.append(new Pid(0x01,0x19,"O2B2S2Voltage","Bank 2 Sensor 2 O2 Voltage","","","0119",0,0,true));
+	pidList.append(new Pid(0x01,0x1A,"O2B2S3Voltage","Bank 2 Sensor 3 O2 Voltage","","","011A",0,0,true));
+	pidList.append(new Pid(0x01,0x1B,"O2B2S4Voltage","Bank 2 Sensor 4 O2 Voltage","","","011B",0,0,true));
+	pidList.append(new Pid(0x01,0x1C,"OBDStandards","OBD Standards this vehicle conforms to","","","011C",0,0,true));
+	pidList.append(new Pid(0x01,0x1D,"O2Sensors","Oxygen Sensors Present","","","011D",0,0,true));
+	pidList.append(new Pid(0x01,0x1E,"AuxInput","Auxillary Input Status","","","011E",0,0,true));
+
+
+
+	pidList.append(new Pid(0x01,0x1F,"Engine Runtime","Time since engine start","s","(256*A)+B","011F",0,65535,false));
+
+
+	pidList.append(new Pid(0x01,0x31,"DistanceSinceMILCleared","Distance since MIL Cleared","km","(A*256)+B","0131",0,65535,false));
+
 
 
 
@@ -483,7 +554,6 @@ ObdInfo::ObdInfo()
 	modeSixScalerList.append(scale10);
 	ModeSixScalers scale16;
 	scale16.usaid = 0x16;
-	scale16.offset = 0;
 	scale16.description = "Temperature";
 	scale16.units = "C";
 	scale16.offset = -40;
@@ -491,6 +561,15 @@ ObdInfo::ObdInfo()
 	scale16.min = 0;
 	scale16.max = 0xFFFF;
 	modeSixScalerList.append(scale16);
+	ModeSixScalers scale24;
+	scale24.usaid = 0x24;
+	scale24.offset = 0;
+	scale24.description = "Counts";
+	scale24.units = "Count";
+	scale24.multiplier = 1;
+	scale24.min = 0;
+	scale24.max = 0xFFFF;
+	modeSixScalerList.append(scale24);
 	ModeSixScalers scale30;
 	scale30.usaid = 0x30;
 	scale30.offset = 0;
@@ -501,6 +580,26 @@ ObdInfo::ObdInfo()
 	scale30.min = 0;
 	scale30.max = 0xFFFF;
 	modeSixScalerList.append(scale30);
+	ModeSixScalers scaleA9;
+	scaleA9.usaid = 0xA9;
+	scaleA9.offset = 0;
+	scaleA9.description = "Pressure/Second";
+	scaleA9.units = "Pa/s";
+	scaleA9.offset = 0;
+	scaleA9.multiplier = 0.25;
+	scaleA9.min = 0;
+	scaleA9.max = 0xFFFF;
+	modeSixScalerList.append(scaleA9);
+	ModeSixScalers scaleFE;
+	scaleFE.usaid = 0xFE;
+	scaleFE.offset = 0;
+	scaleFE.description = "Pressure";
+	scaleFE.units = "Pa";
+	scaleFE.offset = -8192;
+	scaleFE.multiplier = 0.25;
+	scaleFE.min = 0;
+	scaleFE.max = 0xFFFF;
+	modeSixScalerList.append(scaleFE);
 
 
 
@@ -594,4 +693,22 @@ int ObdInfo::intFromHex(QString num)
 		}
 	}
 	return final;
+}
+ObdInfo::Pid::Pid(unsigned char amode,unsigned char apid,QString aname,QString adescription,QString aunit,QString afunction,QString astringrep,float amin, float amax,bool abitencoded)
+{
+	mode = amode;
+	pid = apid;
+	name = aname;
+	description = adescription;
+	unit = aunit;
+	function = afunction;
+	stringRep = astringrep;
+	min = amin;
+	max = amax;
+	bitencoded = abitencoded;
+}
+
+ObdInfo::Pid::Pid()
+{
+
 }
