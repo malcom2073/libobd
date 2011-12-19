@@ -226,9 +226,10 @@ void ObdThread::run()
 				}
 			}
 		}
+		m_reqClassRemoveList.clear();
 		for (int i=0;i<m_reqClassList.count();i++)
 		{
-			qDebug() << "Adding req" << m_reqClassList[i].type;
+			//qDebug() << "Adding req" << m_reqClassList[i].type;
 			m_reqClassListThreaded.prepend(m_reqClassList[i]);
 			m_reqClassFailureMap[&m_reqClassList[i]] = 0;
 			m_whiteList[&m_reqClassList[i]]=false;
@@ -256,10 +257,10 @@ void ObdThread::run()
 				m_obd->closePort();
 				threadLockMutex.unlock();
 
-				//for (int j=0;j<m_reqClassListThreaded.count();j++)
-				//{
-					//m_reqClassListThreaded.removeAll();
-				//}
+				for (int j=0;j<m_reqClassListThreaded.count();j++)
+				{
+					m_reqClassListThreaded.clear();
+				}
 				threadLockMutex.unlock();
 				m_obdConnected = false;
 				emit disconnected();
