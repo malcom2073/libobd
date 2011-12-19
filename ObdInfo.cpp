@@ -149,6 +149,8 @@ ObdInfo::ObdInfo()
 	pidList.append(new Pid(0x01,0x1C,"OBDStandards","OBD Standards this vehicle conforms to","","","011C",0,0,true));
 	pidList.append(new Pid(0x01,0x1D,"O2Sensors","Oxygen Sensors Present","","","011D",0,0,true));
 	pidList.append(new Pid(0x01,0x1E,"AuxInput","Auxillary Input Status","","","011E",0,0,true));
+	pidList.append(new Pid(0x01,0x2F,"FuelLevel","Fuel Level Input","%","A*(100/255)","012F",0,100,false));
+	pidList.append(new Pid(0x01,0x46,"AmbientAir","Ambient Air Temp","C","A-40","0146",-40,215,false));
 
 
 
