@@ -37,7 +37,7 @@ ObdInfo::ObdInfo()
 	else
 	{
 		qDebug() << "Error! No obd2data.dat file found! Expect a segfault";
-		return;
+		//return;
 	}
 	/*
 	QFile file(filename);
