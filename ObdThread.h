@@ -167,7 +167,7 @@ private:
 
 signals:
 	void monitorTestReply(QList<QString> list);
-	void onBoardMonitoringReply(QList<unsigned char> midlist,QList<unsigned char> tidlist,QList<QString> vallist,QList<QString> minlist,QList<QString> maxlist);
+	void onBoardMonitoringReply(QList<unsigned char> midlist,QList<unsigned char> tidlist,QList<QString> vallist,QList<QString> minlist,QList<QString> maxlist,QList<QString> passlist);
 	void mfgStringReply(QString string);
 	void liberror(ObdThread::ObdError err);
 	void voltageReply(double volts);

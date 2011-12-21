@@ -476,6 +476,7 @@ void ObdThread::run()
 				QList<unsigned char> tidlist;
 				QList<unsigned char> midlist;
 				QList<QString> vallist;
+				QList<QString> passlist;
 				for (int j=0;j<pids.size();j++)
 				{
 					QString reqstr = (QString("06") + ((pids[j] < 16) ? "0" : "") + QString::number(pids[j],16).toUpper() + "\r");
@@ -510,7 +511,7 @@ void ObdThread::run()
 							k+= 4;
 							QString type = total.mid(k,2);
 							unsigned char obdmidchar = obdLib::byteArrayToByte(name[0].toAscii(),name[1].toAscii());
-							unsigned char obdtidchar = obdLib::byteArrayToByte(name[2].toAscii(),name[1].toAscii());
+							unsigned char obdtidchar = obdLib::byteArrayToByte(name[2].toAscii(),name[3].toAscii());
 							unsigned char typechar = obdLib::byteArrayToByte(type[0].toAscii(),type[1].toAscii());
 							midlist.append(obdmidchar);
 							tidlist.append(obdtidchar);
@@ -519,8 +520,10 @@ void ObdThread::run()
 							unsigned int valb=0;
 							valb += obdLib::byteArrayToByte(val[0].toAscii(),val[1].toAscii()) << 8;
 							valb += obdLib::byteArrayToByte(val[2].toAscii(),val[3].toAscii());
-							//qDebug() << "MID:" << QString::number(obdmidchar,16);
-							//qDebug() << "TID:" << QString::number(obdtidchar,16);
+							qDebug() << name;
+							qDebug() << type;
+							qDebug() << "MID:" << QString::number(obdmidchar,16);
+							qDebug() << "TID:" << QString::number(obdtidchar,16);
 
 							ObdInfo::ModeSixScalers scaler = getInfo()->getScalerFromByte(typechar);
 							ObdInfo::ModeSixInfo info = getInfo()->getInfoFromByte(obdmidchar);
@@ -543,12 +546,30 @@ void ObdThread::run()
 							k+=4;
 							QString max = total.mid(k,4);
 							k += 3;
-							minlist.append(QString::number((min.toInt() * scaler.multiplier) + scaler.offset));
-							maxlist.append(QString::number((max.toInt() * scaler.multiplier) + scaler.offset));
+							qDebug() << "Min:" << min;
+							qDebug() << "Max:" << max;
+							unsigned char maxtop = obdLib::byteArrayToByte(max[0].toAscii(),max[1].toAscii());
+							unsigned char maxbot = obdLib::byteArrayToByte(max[2].toAscii(),max[3].toAscii());
+							int totalmax = (maxtop << 8) + maxbot;
+							unsigned char mintop = obdLib::byteArrayToByte(min[0].toAscii(),min[1].toAscii());
+							unsigned char minbot = obdLib::byteArrayToByte(min[2].toAscii(),min[3].toAscii());
+							int totalmin = (mintop << 8) + minbot;
+							totalmin = totalmin * scaler.multiplier + scaler.offset;
+							totalmax = totalmax * scaler.multiplier + scaler.offset;
+							minlist.append(QString::number(totalmin));
+							maxlist.append(QString::number(totalmax));
+							if (newval >= totalmin && newval <= totalmax)
+							{
+								passlist.append("PASS");
+							}
+							else
+							{
+								passlist.append("FAIL");
+							}
 						}
 					}
 				}
-				emit onBoardMonitoringReply(midlist,tidlist,vallist,minlist,maxlist);
+				emit onBoardMonitoringReply(midlist,tidlist,vallist,minlist,maxlist,passlist);
 				//void onBoardMonitoringReply(QList<QString> midlist,QList<QString> tidlist,QList<QString> vallist,QList<QString> minlist,QList<QString> maxlist);
 				if (!m_obd->sendObdRequest("ATH0\r",5,&reply))
 				{

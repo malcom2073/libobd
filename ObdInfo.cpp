@@ -36,7 +36,7 @@ ObdInfo::ObdInfo()
 	}
 	else
 	{
-		qDebug() << "Error! No obd2data.dat file found! Expect a segfault";
+		//qDebug() << "Error! No obd2data.dat file found! Expect a segfault";
 		//return;
 	}
 	/*
@@ -526,6 +526,14 @@ ObdInfo::ObdInfo()
 	scale03.min = 0;
 	scale03.max = 0xFFFF;
 	modeSixScalerList.append(scale03);
+	ModeSixScalers scale05;
+	scale05.usaid = 0x05;
+	scale05.offset = 0;
+	scale05.description = "Raw Value";
+	scale05.multiplier = 0.0000305;
+	scale05.min = 0;
+	scale05.max = 0xFFFF;
+	modeSixScalerList.append(scale05);
 
 	ModeSixScalers scale0A;
 	scale0A.usaid = 0x0A;
@@ -563,6 +571,24 @@ ObdInfo::ObdInfo()
 	scale16.min = 0;
 	scale16.max = 0xFFFF;
 	modeSixScalerList.append(scale16);
+	ModeSixScalers scale1C;
+	scale1C.usaid = 0x1C;
+	scale1C.description = "Angle";
+	scale1C.units = "degrees";
+	scale1C.offset = 0;
+	scale1C.multiplier = 0.01;
+	scale1C.min = 0;
+	scale1C.max = 0xFFFF;
+	modeSixScalerList.append(scale1C);
+	ModeSixScalers scale20;
+	scale20.usaid = 0x20;
+	scale20.description = "Ratio";
+	scale20.units = "R";
+	scale20.offset = 0;
+	scale20.multiplier = 0.0039062;
+	scale20.min = 0;
+	scale20.max = 0xFFFF;
+	modeSixScalerList.append(scale20);
 	ModeSixScalers scale24;
 	scale24.usaid = 0x24;
 	scale24.offset = 0;
@@ -604,7 +630,7 @@ ObdInfo::ObdInfo()
 	modeSixScalerList.append(scaleFE);
 
 
-
+//NEED SCALARS 0xB1
 
 
 
