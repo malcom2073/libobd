@@ -66,6 +66,33 @@ public:
 		ON_BOARD_MONITORS,
 		REQ_SUPPORTED_MODES
 	};
+	enum CONTINUOUS_MONITOR
+	{
+		MISFIRE,
+		FUEL_SYSTEM,
+		COMPONENTS,
+		CATALYST,
+		HEATED_CATALYST,
+		EVAPORATIVE_SYSTEM,
+		SECONDARY_AIR_SYSTEM,
+		AC_REFRIGERANT,
+		OXYGEN_SENSOR,
+		OXYGEN_SENSOR_HEATER,
+		EGR_SYSTEM,
+		NMHC_CAT,
+		NOX_SCR_MONITOR,
+		BOOST_PRESSURE,
+		EXHAUST_GAS_SENSOR,
+		PM_FILTER_MONITORING,
+		EGR_VVT_SYSTEM
+	};
+	enum MONITOR_COMPLETE_STATUS
+	{
+		COMPLETE,
+		INCOMPLETE,
+		UNAVAILABLE
+	};
+
 	class RequestClass
 	{
 	public:
@@ -166,7 +193,8 @@ private:
 	void setProtocol(int num, bool autosearch);
 
 signals:
-	void monitorTestReply(QList<QString> list);
+	//void monitorTestReply(QList<QString> list);
+	void monitorTestReply(QMap<CONTINUOUS_MONITOR,MONITOR_COMPLETE_STATUS> monitorlist);
 	void onBoardMonitoringReply(QList<unsigned char> midlist,QList<unsigned char> tidlist,QList<QString> vallist,QList<QString> minlist,QList<QString> maxlist,QList<QString> passlist);
 	void mfgStringReply(QString string);
 	void liberror(ObdThread::ObdError err);

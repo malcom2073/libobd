@@ -528,19 +528,6 @@ void ObdThread::run()
 							ObdInfo::ModeSixScalers scaler = getInfo()->getScalerFromByte(typechar);
 							ObdInfo::ModeSixInfo info = getInfo()->getInfoFromByte(obdmidchar);
 							ObdInfo::ModeSixInfo test = getInfo()->getTestFromByte(obdtidchar);
-							if (test.id == 0)
-							{
-								//MFG Test
-							//	qDebug() << info.description << "MFG Test";
-							}
-							else
-							{
-							//	qDebug() << info.description << test.description;
-							}
-							double newval = ((valb * scaler.multiplier) + scaler.offset);
-							vallist.append(QString::number(newval));
-
-							//qDebug() << valb << scaler.multiplier << newval << scaler.units;
 							k+=4;
 							QString min = total.mid(k,4);
 							k+=4;
@@ -550,12 +537,43 @@ void ObdThread::run()
 							qDebug() << "Max:" << max;
 							unsigned char maxtop = obdLib::byteArrayToByte(max[0].toAscii(),max[1].toAscii());
 							unsigned char maxbot = obdLib::byteArrayToByte(max[2].toAscii(),max[3].toAscii());
-							int totalmax = (maxtop << 8) + maxbot;
+							double totalmax = (maxtop << 8) + maxbot;
 							unsigned char mintop = obdLib::byteArrayToByte(min[0].toAscii(),min[1].toAscii());
 							unsigned char minbot = obdLib::byteArrayToByte(min[2].toAscii(),min[3].toAscii());
-							int totalmin = (mintop << 8) + minbot;
-							totalmin = totalmin * scaler.multiplier + scaler.offset;
-							totalmax = totalmax * scaler.multiplier + scaler.offset;
+							double totalmin = (mintop << 8) + minbot;
+							if (test.id == 0)
+							{
+								//MFG Test
+							//	qDebug() << info.description << "MFG Test";
+							}
+							else
+							{
+							//	qDebug() << info.description << test.description;
+							}
+							double newval = valb;
+							if (typechar >= 0x80)
+							{
+								//
+								newval = (short)valb;
+								totalmax = (short)totalmax;
+								totalmin = (short)totalmin;
+								newval = ((newval * scaler.multiplier) + scaler.offset);
+								totalmin = (totalmin * scaler.multiplier + scaler.offset);
+								totalmax = (totalmax * scaler.multiplier + scaler.offset);
+							}
+							else
+							{
+								newval = ((valb * scaler.multiplier) + scaler.offset);
+								totalmax = totalmax * scaler.multiplier + scaler.offset;
+								totalmin = totalmin * scaler.multiplier + scaler.offset;
+							}
+							qDebug() << "Scalar:" << QString::number(scaler.multiplier);
+							qDebug() << "Valb" << QString::number(valb);
+							qDebug() << "Newval:" << QString::number(newval);
+							vallist.append(QString::number(newval));
+
+							//qDebug() << valb << scaler.multiplier << newval << scaler.units;
+
 							minlist.append(QString::number(totalmin));
 							maxlist.append(QString::number(totalmax));
 							if (newval >= totalmin && newval <= totalmax)
@@ -690,21 +708,35 @@ void ObdThread::run()
 					qDebug() << "Monitor:" << onestr << twostr << threestr;
 					qDebug() << vect2;
 					qDebug() << QString::number(two) << QString::number(three) << QString::number(four);
-					QList<QString> resultlist;
-					QString misfire = QString(((two >> 0) & 1) ? "1" : "0") + ":" + (((two >> 4) & 1) ? "1" : "0");
-					QString fuelsystem = QString(((two >> 1) & 1) ? "1" : "0") + ":" + (((two >> 5) & 1) ? "1" : "0");
-					QString component = QString(((two >> 2) & 1) ? "1" : "0") + ":" + (((two >> 6) & 1) ? "1" : "0");
-					//	QString reserved = QString(((two >> 3) & 1) ? "1" : "0") + ":" + (((two >> 7) & 1) ? "1" : "0");
-					QString catalyst = QString(((three >> 0) & 1) ? "1" : "0") + ":" + (((four >> 0) & 1) ? "1" : "0");
-					QString heatedcat =QString (((three >> 1) & 1) ? "1" : "0") + ":" + (((four >> 1) & 1) ? "1" : "0");
-					QString evapsys = QString(((three >> 2) & 1) ? "1" : "0") + ":" + (((four >> 2) & 1) ? "1" : "0");
-					QString secondair = QString(((three >> 3) & 1) ? "1" : "0") + ":" + (((four >> 3) & 1) ? "1" : "0");
-					QString acrefrig = QString(((three >> 4) & 1) ? "1" : "0") + ":" + (((four >> 4) & 1) ? "1" : "0");
-					QString oxygensensor = QString(((three >> 5) & 1) ? "1" : "0") + ":" + (((four >> 5) & 1) ? "1" : "0");
-					QString oxygenheater = QString(((three >> 6) & 1) ? "1" : "0") + ":" + (((four >> 6) & 1) ? "1" : "0");
-					QString egrsystem = QString(((three >> 7) & 1) ? "1" : "0") + ":" + (((four >> 7) & 1) ? "1" : "0");
+					//QList<QString> resultlist;
+					QMap<CONTINUOUS_MONITOR,MONITOR_COMPLETE_STATUS> result;
+					result[MISFIRE] = (((two >> 0) & 1) ? (((two >> 4) & 1) ? INCOMPLETE : COMPLETE) : UNAVAILABLE);
+					result[FUEL_SYSTEM] = (((two >> 1) & 1) ? (((two >> 5) & 1) ? INCOMPLETE : COMPLETE) : UNAVAILABLE);
+					result[COMPONENTS] = (((two >> 2) & 1) ? (((two >> 6) & 1) ? INCOMPLETE : COMPLETE) : UNAVAILABLE);
+					result[CATALYST] = (((three >> 0) & 1) ? (((four >> 0) & 1) ? INCOMPLETE : COMPLETE) : UNAVAILABLE);
+					result[HEATED_CATALYST] = (((three >> 1) & 1) ? (((four >> 1) & 1) ? INCOMPLETE : COMPLETE) : UNAVAILABLE);
+					result[EVAPORATIVE_SYSTEM] = (((three >> 2) & 1) ? (((four >> 2) & 1) ? INCOMPLETE : COMPLETE) : UNAVAILABLE);
+					result[SECONDARY_AIR_SYSTEM] = (((three >> 3) & 1) ? (((four >> 3) & 1) ? INCOMPLETE : COMPLETE) : UNAVAILABLE);
+					result[AC_REFRIGERANT] = (((three >> 4) & 1) ? (((four >> 4) & 1) ? INCOMPLETE : COMPLETE) : UNAVAILABLE);
+					result[OXYGEN_SENSOR] = (((three >> 5) & 1) ? (((four >> 5) & 1) ? INCOMPLETE : COMPLETE) : UNAVAILABLE);
+					result[OXYGEN_SENSOR_HEATER] = (((three >> 6) & 1) ? (((four >> 6) & 1) ? INCOMPLETE : COMPLETE) : UNAVAILABLE);
+					result[EGR_SYSTEM] = (((three >> 7) & 1) ? (((four >> 7) & 1) ? INCOMPLETE : COMPLETE) : UNAVAILABLE);
 
-					resultlist.append(misfire);
+							//
+					//QString misfire = QString(((two >> 0) & 1) ? "1" : "0") + ":" + (((two >> 4) & 1) ? "1" : "0");
+					//QString fuelsystem = QString(((two >> 1) & 1) ? "1" : "0") + ":" + (((two >> 5) & 1) ? "1" : "0");
+					//QString component = QString(((two >> 2) & 1) ? "1" : "0") + ":" + (((two >> 6) & 1) ? "1" : "0");
+					//	QString reserved = QString(((two >> 3) & 1) ? "1" : "0") + ":" + (((two >> 7) & 1) ? "1" : "0");
+					//QString catalyst = QString(((three >> 0) & 1) ? "1" : "0") + ":" + (((four >> 0) & 1) ? "1" : "0");
+					//QString heatedcat =QString (((three >> 1) & 1) ? "1" : "0") + ":" + (((four >> 1) & 1) ? "1" : "0");
+					//QString evapsys = QString(((three >> 2) & 1) ? "1" : "0") + ":" + (((four >> 2) & 1) ? "1" : "0");
+					//QString secondair = QString(((three >> 3) & 1) ? "1" : "0") + ":" + (((four >> 3) & 1) ? "1" : "0");
+					//QString acrefrig = QString(((three >> 4) & 1) ? "1" : "0") + ":" + (((four >> 4) & 1) ? "1" : "0");
+					//QString oxygensensor = QString(((three >> 5) & 1) ? "1" : "0") + ":" + (((four >> 5) & 1) ? "1" : "0");
+					//QString oxygenheater = QString(((three >> 6) & 1) ? "1" : "0") + ":" + (((four >> 6) & 1) ? "1" : "0");
+					//QString egrsystem = QString(((three >> 7) & 1) ? "1" : "0") + ":" + (((four >> 7) & 1) ? "1" : "0");
+
+					/*resultlist.append(misfire);
 					resultlist.append(fuelsystem);
 					resultlist.append(component);
 					//resultlist.append(reserved);
@@ -715,8 +747,8 @@ void ObdThread::run()
 					resultlist.append(acrefrig);
 					resultlist.append(oxygensensor);
 					resultlist.append(oxygenheater);
-					resultlist.append(egrsystem);
-					emit monitorTestReply(resultlist);
+					resultlist.append(egrsystem);*/
+					emit monitorTestReply(result);
 
 				}
 				if (!m_obdConnected)
