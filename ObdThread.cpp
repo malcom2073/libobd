@@ -43,6 +43,18 @@ ObdThread::ObdThread(QObject *parent) : QThread(parent)
 	m_obdInfo = new ObdInfo();
 	start();
 }
+void ObdThread::debug(QString msg,DebugLevel level)
+{
+	if (level <= m_dbgLevel)
+	{
+		qDebug() << msg;
+	}
+}
+void ObdThread::setDebugLevel(DebugLevel level)
+{
+	m_dbgLevel = level;
+}
+
 void ObdThread::connect()
 {
 	threadLockMutex.lock();
@@ -77,13 +89,15 @@ void ObdThread::disconnect()
 }
 void ObdThread::clearReqList()
 {
+	debug("ObdThread::clearReqList()",DEBUG_VERBOSE);
 	removePidMutex.lock();
 	m_reqClassListThreaded.clear();
 	removePidMutex.unlock();
 }
 void ObdThread::sendReqTroubleCodes()
 {
-	qDebug() << "Trouble codes request...";
+	debug("ObdThread::sendReqTroubleCodes()",DEBUG_VERBOSE);
+	//qDebug() << "Trouble codes request...";
 	threadLockMutex.lock();
 	RequestClass req;
 	req.repeat = false;
@@ -190,6 +204,84 @@ void ObdThread::removeRequest(RequestClass req)
 	m_reqClassRemoveList.append(req);
 	threadLockMutex.unlock();
 }
+QStringList ObdThread::parseCode(QString codetoparse,QString type)
+{
+	QStringList codes;
+	bool inCode = false;
+	int count =0;
+	QString codetype ="";
+	for (int j=0;j<codetoparse.size();j++)
+	{
+		if (codetoparse[j] == '4' && codetoparse[j+1] == '3' && inCode == false)
+		{
+			inCode = true;
+			//Funny little thing. A8 (And A7) have size indicators after the FIRST 43, but not after the second.
+			if (((type == "A8") || (type == "A7") || type == "A6") && codes.size() == 0)
+			{
+				j+=4;
+			}
+			else
+			{
+				j+=2;
+			}
+		}
+		if (inCode)
+		{
+			count++;
+			unsigned char onefirst = m_obd->byteArrayToByte(codetoparse.toAscii().at(j),codetoparse.toAscii().at(j+1));
+			unsigned char onesecond = m_obd->byteArrayToByte(codetoparse.toAscii().at(j+2),codetoparse.toAscii().at(j+3));
+			if (!(onefirst >> 7) & 1)
+			{
+				if (!((onefirst >> 6) & 1))
+				{
+					//qDebug() << "Powertrain code";
+					codetype = "P";
+				}
+				else if ((onefirst >> 6) & 1)
+				{
+					//qDebug() << "Chassis code";
+					codetype = "C";
+				}
+			}
+			else
+			{
+				if (!((onefirst >> 6) & 1))
+				{
+					//qDebug() << "Body code";
+					codetype = "B";
+				}
+				else
+				{
+					//qDebug() << "Network code";
+					codetype = "U";
+				}
+			}
+			unsigned char second = (onefirst >> 4) & 0x3;
+			unsigned char third = (onefirst) & 0xF;
+			unsigned char fourth = ((onesecond >> 4) & 0xF);
+			unsigned char fifth = (onesecond & 0xF);
+			//We don't want to return an empty code. All 0's is just padding
+			if (!((second == 0 ) && (third == 0) && (fourth == 0) && (fifth == 0)))
+			{
+				qDebug() << QString::number(second) << QString::number(third) << QString::number(fourth) << QString::number(fifth);
+				codes.append(codetype + QString::number(second) + QString::number(third) + QString::number(fourth) + QString::number(fifth));
+			}
+
+			j += 3;
+			if (codes.size() == 3 || codes.size() == 6)
+			{
+				//Protocol type A8 does not have another 43 seperating code chunks.
+				//All other protocols do I think.
+				if (type != "A8" && type != "A7" && type != "A6")
+				{
+					inCode = false;
+				}
+			}
+		}
+
+	}
+	return codes;
+}
 
 void ObdThread::run()
 {
@@ -238,6 +330,7 @@ void ObdThread::run()
 		threadLockMutex.unlock();
 		first = true;
 		//qDebug() << "Size:" << m_reqClassListThreaded.size();
+		debug("Size: " + QString::number(m_reqClassListThreaded.size()),DEBUG_VERY_VERBOSE);
 		for (int i=0;i<m_reqClassListThreaded.count();i++)
 		{
 			//Handle request here
@@ -245,7 +338,8 @@ void ObdThread::run()
 			{
 				if (!m_connect())
 				{
-					qDebug() << "Unable to connect";
+					debug("Unable to connect",DEBUG_ERROR);
+					//qDebug() << "Unable to connect";
 					//emit liberror(UNABLE_TO_OPEN_COM_PORT);
 					continue;
 				}
@@ -385,86 +479,6 @@ void ObdThread::run()
 
 					}
 				}
-				/*
-				if (m_obd->sendObdRequest("0600\r",5,&reply))
-				{
-					var = (((unsigned int)reply[2] << 24) + ((unsigned int)reply[3] << 16) + ((unsigned int)reply[4] << 8) + (unsigned int)reply[5]);
-					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
-					for (int j=1;j<0x20;j++)
-					{
-						if (((var >> (0x20-j)) & 1))
-						{
-							qDebug() << "Pid " << j << "enabled";
-							pids.append(j);
-						}
-						else
-						{
-							qDebug() << "pid" << j << "disabled";
-						}
-					}
-
-				}
-				if (m_obd->sendObdRequest("0620\r",5,&reply))
-				{
-					var = (((unsigned int)reply[2] << 24) + ((unsigned int)reply[3] << 16) + ((unsigned int)reply[4] << 8) + (unsigned int)reply[5]);
-					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
-					for (int j=1;j<0x20;j++)
-					{
-						if (((var >> (0x20-j)) & 1))
-						{
-							pids.append(j+0x20);
-						}
-					}
-				}
-				if (m_obd->sendObdRequest("0640\r",5,&reply))
-				{
-					var = (((unsigned int)reply[2] << 24) + ((unsigned int)reply[3] << 16) + ((unsigned int)reply[4] << 8) + (unsigned int)reply[5]);
-					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
-					for (int j=1;j<0x20;j++)
-					{
-						if (((var >> (0x20-j)) & 1))
-						{
-							pids.append(j+0x40);
-						}
-					}
-				}
-				if (m_obd->sendObdRequest("0660\r",5,&reply))
-				{
-					var = (((unsigned int)reply[2] << 24) + ((unsigned int)reply[3] << 16) + ((unsigned int)reply[4] << 8) + (unsigned int)reply[5]);
-					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
-					for (int j=1;j<0x20;j++)
-					{
-						if (((var >> (0x20-j)) & 1))
-						{
-							pids.append(j+0x60);
-						}
-					}
-				}
-				if (m_obd->sendObdRequest("0680\r",5,&reply))
-				{
-					var = (((unsigned int)reply[5] << 24) + ((unsigned int)reply[4] << 16) + ((unsigned int)reply[3] << 8) + (unsigned int)reply[2]);
-					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
-					for (int j=1;j<0x20;j++)
-					{
-						if (((var >> (j)) & 1))
-						{
-							pids.append((j-1)+0x80);
-						}
-					}
-				}
-				if (m_obd->sendObdRequest("06A0\r",5,&reply))
-				{
-					var = (((unsigned int)reply[5] << 24) + ((unsigned int)reply[4] << 16) + ((unsigned int)reply[3] << 8) + (unsigned int)reply[2]);
-					qDebug() << QString::number(reply[2],16) <<QString::number(reply[3],16) << QString::number(reply[4],16) << QString::number(reply[5],16);
-					for (int j=1;j<0x20;j++)
-					{
-						if (((var >> (j)) & 1))
-						{
-							pids.append((j-1)+0xA0);
-							qDebug() << "Pid Enabled" << j+0xA0;
-						}
-					}
-				}*/
 				if (!m_obd->sendObdRequest("ATH1\r",5,&reply))
 				{
 					qDebug() << "Unable to enable headers";
@@ -816,10 +830,15 @@ void ObdThread::run()
 
 					for (int j=0;j<replyVector.size();j++)
 					{
-						vect += replyVector[j];
+						if (replyVector[j] != '\n' && replyVector[j] != '\r' && replyVector[j] != ' ')
+						{
+							vect += replyVector[j];
+						}
 					}
-					//qDebug() << "Protcol Number:" << vect;
+					qDebug() << "Protocol Number:" << vect;
 				}
+				QString protNum = vect;
+				setHeaders(true); //Neccesary for proper reading
 				if (!m_obd->sendObdRequestString("03\r",3,&replyVector))
 				{
 					//qDebug() << "Error retreiving trouble codes";
@@ -827,7 +846,7 @@ void ObdThread::run()
 					{
 						//Nodata on trouble codes means there are none available to read.
 						emit consoleMessage("No trouble codes");
-						emit troubleCodesReply(QList<QString>());
+						emit troubleCodesReply(QString(),QList<QString>());
 						m_reqClassFailureMap.remove(&m_reqClassListThreaded[i]);
 						m_reqClassListThreaded.removeAt(i);
 						//continue;
@@ -835,7 +854,7 @@ void ObdThread::run()
 					}
 					//Error
 				}
-				vect.clear();
+				//vect.clear();
 				QString vect2 = "";
 
 				for (int j=0;j<replyVector.size();j++)
@@ -844,8 +863,11 @@ void ObdThread::run()
 					{
 						vect.append(replyVector[j]);
 					}
+					if (replyVector[j] != ' ')
+					{
 					//qDebug() << replyVector[i];
 					vect2 += replyVector[j];
+					}
 				}
 				//qDebug() << vect2;
 				//qDebug() << vect;
@@ -857,51 +879,52 @@ void ObdThread::run()
 					//qDebug() << "Converted:" << m_obd->byteArrayToByte(vect.toAscii().at(i),vect.toAscii().at(i+1));
 					j++;
 				}
-
-				//qDebug() << "Trouble: " << bytevect;
-				if (vect == "A6")
+				QStringList vectsplitline = vect2.split("\r");
+				QStringList ecuname;
+				QStringList ecuresponse;
+				for (int k=0;k<vectsplitline.size();k++)
 				{
-					bool inHeader = true;
-					QString num = "";
-					for (int j=0;j<replyVector.size()-1;j++)
+					QString full = "";
+					QString name = "";
+					//We want to pick up on the string as the beginning,
+					//after all the header stuff. On A7 and A8, this is different.
+					if (protNum == "A7")
 					{
-						num += QString((char)replyVector.at(j));
+						full = vectsplitline[k].mid(10);
+						name = vectsplitline[k].mid(6,2);
 					}
-					QStringList numsplit = num.split(" ");
-					QString currentHeader;
-					numsplit.removeAt(3);
-					for (int j=0;j<numsplit.count()-1;j++)
+					else if (protNum == "A8" || protNum == "A6")
 					{
-						if (inHeader)
+						full = vectsplitline[k].mid(5);
+						name = vectsplitline[k].mid(0,3);
+					}
+					else
+					{
+						full = vectsplitline[k].mid(6,vectsplitline[k].length()-8);
+						name = vectsplitline[k].mid(4,2);
+					}
+					bool found = false;
+					for (int l=0;l<ecuname.size();l++)
+					{
+						if (ecuname[l] == name)
 						{
-							currentHeader = numsplit[j];
-							inHeader = false;
-							numsplit.removeAt(j);
-							numsplit.removeAt(j);
-							numsplit.removeAt(j);
-							j--;
-							j--;
-							//qDebug() << "Header:" << currentHeader;
-						}
-						else
-						{
-							if (numsplit[j+1].length() > 2)
-							{
-								//This is a header message;
-
-								inHeader = true;
-							}
-							else
-							{
-								QString code = numsplit[j] + numsplit[j+1];
-								j++;
-								//qDebug() << "Code:" << code;
-							}
+							ecuresponse[l] += full;
+							found = true;
 						}
 					}
-					//7E8
+					if (!found)
+					{
+						ecuname.append(name);
+						ecuresponse.append(full);
+					}
 
-					//11 bit can
+				}
+				for (int k=0;k<ecuresponse.length();k++)
+				{
+					//ecuResponseMap[ecuname[k]].append(parseCode(ecuresponse[k],protNum));
+					//codes.append(parseCode(ecuresponse[k],protNum));
+					QStringList reply = parseCode(ecuresponse[k],protNum);
+					emit troubleCodesReply(ecuname[k],reply);
 				}
 				/*QString rett = "";
 				for (int i=0;i<replyVector.size();i++)
@@ -918,174 +941,9 @@ void ObdThread::run()
 				}
 				//continue;
 				//qDebug() << rett;
-				QList<QString> codes;
-				bool inCode = false;
-				int count = 0;
-				unsigned char ecu = 0;
-				QString codetype;
-				for (int j=0;j<vect.size();j++)
-				{
-					if (vect[j] == '4' && vect[j+1] == '3')
-					{
-						inCode = true;
-						j+=2;
-					}
-					if (inCode)
-					{
-						count++;
-						unsigned char onefirst = m_obd->byteArrayToByte(vect.toAscii().at(j),vect.toAscii().at(j+1));
-						unsigned char onesecond = m_obd->byteArrayToByte(vect.toAscii().at(j+2),vect.toAscii().at(j+3));
 
-						/*unsigned char twofirst = m_obd->byteArrayToByte(vect.toAscii().at(i+4),vect.toAscii().at(i+5));
-						unsigned char twosecond = m_obd->byteArrayToByte(vect.toAscii().at(i+6),vect.toAscii().at(i+7));
-
-						unsigned char threefirst = m_obd->byteArrayToByte(vect.toAscii().at(i+8),vect.toAscii().at(i+9));
-						unsigned char threesecond = m_obd->byteArrayToByte(vect.toAscii().at(i+10),vect.toAscii().at(i+11));
-						*/
-						if (!(onefirst >> 7) & 1)
-						{
-							if (!((onefirst >> 6) & 1))
-							{
-								//qDebug() << "Powertrain code";
-								codetype = "P";
-							}
-							else if ((onefirst >> 6) & 1)
-							{
-								//qDebug() << "Chassis code";
-								codetype = "C";
-							}
-						}
-						else
-						{
-							if (!((onefirst >> 6) & 1))
-							{
-								//qDebug() << "Body code";
-								codetype = "B";
-							}
-							else
-							{
-								//qDebug() << "Network code";
-								codetype = "N";
-							}
-						}
-						unsigned char second = (onefirst >> 4) & 3;
-						unsigned char third = (onefirst) & 0xF;
-						//unsigned char fourth = vect.toAscii().at(i+2);
-						//unsigned char fifth = vect.toAscii().at(i+3);
-						unsigned char fourth = ((onesecond >> 4) & 0xF);
-						unsigned char fifth = (onesecond & 0xF);
-						//qDebug () << (int)second << (int) third << (int) fourth << (int)fifth;
-						codes.append(codetype + QString::number(second) + QString::number(third) + QString::number(fourth) + QString::number(fifth));
-						//unsigned char fourth = (bytevect[i+1] << 4) & 0xF;
-						//unsigned char fifth = (bytevect[i+1]) & 0xF;
-
-
-					}
-					j += 3;
-				}
-				/*qDebug() << "OUTPUTTING CODES";
-				for (int i=0;i<codes.size();i++)
-				{
-					qDebug() << codes[i];
-				}*/
-				/*
-				for (int i=0;i<bytevect.size();i++)
-				{
-					if (bytevect[i] == 0x43)
-					{
-						inCode = true;
-						i++;
-					}
-					if (inCode)
-					{
-						count++;
-						qDebug() << "Val:" << bytevect[i];
-						if (!((bytevect[i] >> 7) & 1))
-						{
-							if (!((bytevect[i] >> 6) & 1))
-							{
-								qDebug() << "Powertrain code";
-								//codes.append(QString::number(ecu) + ":P");
-								codetype = "P";
-							}
-							else if (((bytevect[i] >> 6) & 1))
-							{
-								//codes.append(QString::number(ecu) + ":C");
-								codetype = "C";
-								qDebug () << "Chassis Code";
-							}
-						}
-						else if ((bytevect[i] >> 7) & 1)
-						{
-							if (!((bytevect[i] >> 6) & 1))
-							{
-								//codes.append(QString::number(ecu) + ":B");
-								codetype = "B";
-								qDebug() << "Body code";
-							}
-							else if (((bytevect[i] >> 6) & 1))
-							{
-								//codes.append(QString::number(ecu) + ":U");
-								codetype = "U";
-								qDebug () << "Network Code";
-							}
-						}
-						unsigned char second = (bytevect[i] << 4) & 3;
-						unsigned char third = (bytevect[i]) & 0xF;
-						unsigned char fourth = (bytevect[i+1] << 4) & 0xF;
-						unsigned char fifth = (bytevect[i+1]) & 0xF;
-						qDebug () << (int)second << (int) third << (int) fourth << (int)fifth;
-						for (int j=i;j<bytevect.size();j++)
-						{
-							qDebug() << QString::number(bytevect.at(j));
-						}
-						if (second == 0 && third == 0 && fourth == 0 && fifth == 0)
-						{
-
-						}
-						else
-						{
-							codes.append(QString::number(ecu).append(":").append(codetype).append(QString::number(second)).append(QString::number(third)).append(QString::number(fourth)).append(QString::number(fifth)));
-
-						}
-						i++;
-						if (count >= 3)
-						{
-							count = 0;
-							inCode = false;
-							i++; // Pop past the checksum byte
-						}
-					}
-					else
-					{
-						//Read headers here
-						qDebug() << "Header:" << QString::number(bytevect[i]) << QString::number(bytevect[i+1]) << QString::number(bytevect[i+2]);
-						ecu = bytevect[i+2];
-						i+=2;
-					}
-				}*/
 				//qDebug() << "Done with trouble codes";
-				troubleCodesReply(codes);
-				//qDebug() <<
-				/*if (!m_obdConnected)
-				{
-					emit consoleMessage(QString("Disconnected"));
-					m_obd->closePort();
-					emit disconnected();
-				}*/
-				/*QString replyString = QString((char*)replyVectorString.data());
-				if (replyString.contains("NODATA"))
-				{
-					qDebug() << "NODATA";
-				}
-				*/
-				/*QString rep = "";
-				for (int i=0;i<replyVector.size();i++)
-				{
-					rep += QString::number(replyVector[i],16).toUpper() + " ";
-				}
-			qDebug() << rep;*/
-
+				//troubleCodesReply(codes);
 			}
 			else if (m_reqClassListThreaded[i].type == RAW_REQUEST)
 			{
@@ -1373,7 +1231,7 @@ void ObdThread::run()
 				if (!m_obdConnected)
 				{
 					m_obd->closePort();
-					m_obdConnected = false;
+					//m_obdConnected = false;
 					emit disconnected();
 				}
 
@@ -1421,7 +1279,8 @@ void ObdThread::run()
 
 								if (!allislost && !m_whiteList[&m_reqClassListThreaded[i]] && m_reqClassFailureMap[&m_reqClassListThreaded[i]] > 20)
 								{
-									qDebug() << "Reached Maximum errors for pid. Disabling: " << req.mid(0,req.length()-1);
+									//qDebug() << "Reached Maximum errors for pid. Disabling: " << req.mid(0,req.length()-1);
+									debug("Reached maximum errors for pid. Disabling: " + req.mid(0,req.length()-1),DEBUG_WARN);
 									emit consoleMessage(QString("Reached maximum errors for pid ") + req.mid(0,req.length()-1) + QString(". Removing from request list."));
 									m_reqClassFailureMap.remove(&m_reqClassListThreaded[i]);
 									m_reqClassListThreaded.removeAt(i);
@@ -1440,8 +1299,11 @@ void ObdThread::run()
 							else if (m_obd->lastError() == obdLib::SERIALREADERROR || m_obd->lastError() == obdLib::SERIALWRITEERROR)
 							{
 								//errorCount++;
-								qDebug() << "Serial read/write error on request" << req.mid(0,req.length()-1);
+								//qDebug() << "Serial read/write error on request" << req.mid(0,req.length()-1);
+								debug("Serial read/write error on request " + req.mid(0,req.length()-1),DEBUG_FATAL);
 								emit consoleMessage("Serial read/write error on request" + req.mid(0,req.length()-1));
+
+
 								//m_requestLoopRunning = false;
 
 							}
@@ -1484,7 +1346,8 @@ void ObdThread::run()
 							}
 							else
 							{
-								qDebug() << "Invalid Pid returned:" << req.mid(0,req.length()-1);
+								//qDebug() << "Invalid Pid returned:" << req.mid(0,req.length()-1);
+								debug("Invalid PID returned from ObdInfo::getPidFromString()!!!",DEBUG_ERROR);
 								emit consoleMessage(QString("Invalid PID returned from ObdInfo::getPidFromString(): ") + req.mid(0,req.length()-1));
 							}
 						}
@@ -1580,7 +1443,8 @@ bool ObdThread::initElm()
 			if (!resetElm())
 			{
 				emit consoleMessage("Error resetting ELM Device");
-				qDebug() << "Error resetting ELM device";
+				//qDebug() << "Error resetting ELM device";
+				debug("Error resetting ELM Device",DEBUG_ERROR);
 				if (i == 1) return false;
 			}
 		}
@@ -1588,21 +1452,24 @@ bool ObdThread::initElm()
 		if (!echoOff())
 		{
 			emit consoleMessage("Error turning echo off");
-			qDebug() << "Error turning echo off";
+			//qDebug() << "Error turning echo off";
+			debug("Error turning off echo",DEBUG_ERROR);
 			if (i == 1) return false;
 			continue;
 		}
 		if (!setHeaders(false))
 		{
 			emit consoleMessage("Error turning headers off");
-			qDebug() << "Error turning headers off";
+			//qDebug() << "Error turning headers off";
+			debug("Error turning off headers",DEBUG_ERROR);
 			if (i == 1) return false;
 			continue;
 		}
 		if (!lineFeedOff())
 		{
 			emit consoleMessage("Error turning linefeeds off");
-			qDebug() << "Error turning linefeeds off";
+			//qDebug() << "Error turning linefeeds off";
+			debug("Error turning linefeeds off",DEBUG_ERROR);
 			if (i == 1) return false;
 			continue;
 		}
@@ -1610,7 +1477,8 @@ bool ObdThread::initElm()
 		if (!m_obd->sendObdRequestString("0100\r",5,&replyVector,100,10))
 		{
 			emit consoleMessage("Error in detecting protocol");
-			qDebug() << "Error in finding protocol";
+			//qDebug() << "Error in finding protocol";
+			debug("Error finding protocol with 0100",DEBUG_ERROR);
 			if (i == 1) return false;
 			continue;
 		}
@@ -1630,7 +1498,8 @@ bool ObdThread::resetElm()
 	replyVector.clear();
 	if (!m_obd->sendObdRequestString("atz" CR,4,&replyVector,100,5))
 	{
-		qDebug() << "Error in reset sent";
+		//qDebug() << "Error in reset sent";
+		debug("Error when sending reset command",DEBUG_WARN);
 	}
 	for (unsigned int i=0;i<replyVector.size();i++)
 	{
@@ -1644,14 +1513,16 @@ bool ObdThread::resetElm()
 	else if (reply.contains("atz"))
 	{
 		//Echoing here?
-		qDebug() << "Reset echoed:" << reply;
+		//qDebug() << "Reset echoed:" << reply;
+		debug("Reset echoed: " + reply,DEBUG_VERBOSE);
 		m_obd->flush();
 		usleep(10000);
 		return true;
 	}
 	else
 	{
-		qDebug() << "Reset:" << reply;
+		//qDebug() << "Reset:" << reply;
+		debug("Bad return when resetting :" + reply,DEBUG_WARN);
 		return false;
 	}
 }
@@ -1669,7 +1540,8 @@ bool ObdThread::echoOff()
 	{
 		return true;
 	}
-	qDebug() << "Bad Echo:" << reply;
+	debug("Bad return when turning echo off :" + reply,DEBUG_WARN);
+	//qDebug() << "Bad Echo:" << reply;
 	return false;
 }
 bool ObdThread::setHeaders(bool on)
@@ -1946,15 +1818,18 @@ QString ObdThread::calc(QString str)
 }
 bool ObdThread::m_connect()
 {
-	qDebug() << "Connecting...";
+	//qDebug() << "Connecting...";
+	debug("ObdThread::m_connect()",DEBUG_VERBOSE);
 	if (m_obd->openPort(m_port.toStdString().c_str(),m_baud) < 0)
 	{
-		qDebug() << "Error opening OBD Port";
+		//qDebug() << "Error opening OBD Port";
+		debug("Error opening OBD port",DEBUG_ERROR);
 		emit liberror(ObdThread::UNABLE_TO_OPEN_COM_PORT);
 		return false;
 	}
 	if (!initElm())
 	{
+		debug("Error in ELM init",DEBUG_ERROR);
 		emit consoleMessage("Error in ELM init, port not opened");
 		m_obd->closePort();
 		//emit disconnected();
@@ -1964,10 +1839,12 @@ bool ObdThread::m_connect()
 	//m_obdConnected = true;
 	QString version = getElmVersion().replace("\r","").replace("\n","");
 	emit consoleMessage(QString("Elm found. Version: ").append(version));
-	qDebug() << "Connected to ELM version" << version;
-	setProtocol(0,false);
+	//qDebug() << "Connected to ELM version" << version;
+	debug("Connected to ELM " + version,DEBUG_INFO);
+	//setProtocol(0,false);
 	QString protocol = getProtocolName().replace("\r","").replace("\n","");
-	qDebug() << "Connected protocol:" << protocol;
+	//qDebug() << "Connected protocol:" << protocol;
+	debug("Protocol " + protocol,DEBUG_INFO);
 	emit protocolReply(protocol);
 	emit connected(version);
 	return true;
@@ -1990,8 +1867,8 @@ QString ObdThread::getProtocolName()
 void ObdThread::setProtocol(int num, bool autosearch)
 {
 
-	if (!m_obd->sendObdRequest("ATSP00\r",7,20))
+	/*if (!m_obd->sendObdRequest("ATSP00\r",7,20))
 	{
 		qDebug() << "Error setting auto-protocol";
-	}
+	}*/
 }

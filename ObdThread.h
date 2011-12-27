@@ -31,6 +31,16 @@
 #include "obdlib.h"
 #include <QByteArray>
 #include <QVector>
+
+
+
+#define LIBOBD_VERSION_MAJOR 0
+#define LIBOBD_VERSION_MINOR 9
+#define LIBOBD_VERSION_PATCH 0
+
+
+
+
 class ObdThread : public QThread
 {
 	Q_OBJECT
@@ -126,8 +136,19 @@ public:
 		bool repeat;
 		QByteArray custom;
 	};
+	enum DebugLevel
+	{
+		DEBUG_VERY_VERBOSE=0,
+		DEBUG_VERBOSE=1,
+		DEBUG_INFO=2,
+		DEBUG_WARN=3,
+		DEBUG_ERROR=4,
+		DEBUG_FATAL=5
+	};
 
 	ObdThread(QObject *parent=0);
+	void debug(QString msg,DebugLevel level);
+	void setDebugLevel(DebugLevel level);
 	void setPort(QString port);
 	void setBaud(int baud);
 	void addRequest(int mode, int pid, int priority,int wait);
@@ -155,10 +176,14 @@ public:
 	void sendReqMonitorStatus();
 	QString port() { return m_port; }
 	void findObdPort();
+	QString version() { return QString::number(LIBOBD_VERSION_MAJOR) + "." + QString::number(LIBOBD_VERSION_MINOR) + "." + QString::number(LIBOBD_VERSION_PATCH); }
+
 protected:
 	void run();
 	void run2();
 private:
+	QStringList parseCode(QString code,QString type);
+	DebugLevel m_dbgLevel;
 	QMutex threadLockMutex;
 	QMutex loopTypeMutex;
 	QMutex removePidMutex;
@@ -207,7 +232,7 @@ signals:
 	void pidReply(QString pid,QString val,int set,double time);
 	void singleShotReply(QByteArray request, QByteArray list);
 	void supportedPidsReply(QList<QString> list);
-	void troubleCodesReply(QList<QString> codes);
+	void troubleCodesReply(QString ecu, QList<QString> codes);
 	void consoleMessage(QString message);
 	void obdPortFound(QString portname);
 	void protocolReply(QString protocol);
