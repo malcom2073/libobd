@@ -26,6 +26,39 @@
 #include <QStringList>
 #define CR "\015"
 #define LF "\012"
+
+
+
+
+void debugCallback(const char *text,void *ptr,obdLib::DebugLevel lvl)
+{
+	ObdThread *obd = qobject_cast<ObdThread*>(static_cast<QObject*>(ptr));
+	if (obd && ptr)
+	{
+		obd->debug(QString(text),lvl);
+	}
+	else
+	{
+		qDebug() << "Error casting debugcallback pointer to ObdThread. This should not happen!!!";
+		return;
+	}
+}
+
+void commsCallback(const char *text,void *ptr)
+{
+	ObdThread *obd = qobject_cast<ObdThread*>(static_cast<QObject*>(ptr));
+	if (obd && ptr)
+	{
+		obd->commsDebug(QString(text));
+	}
+	else
+	{
+		qDebug() << "Error casting commscallback pointer to ObdThread. This should not happen!!!";
+		return;
+	}
+}
+
+
 ObdThread::ObdThread(QObject *parent) : QThread(parent)
 {
 	qRegisterMetaType<QList<QString> >("QList<QString>");
@@ -41,16 +74,26 @@ ObdThread::ObdThread(QObject *parent) : QThread(parent)
 	m_baud = 0;
 	m_port = "";
 	m_obdInfo = new ObdInfo();
+	m_dbgLevel = obdLib::DEBUG_VERY_VERBOSE;
+	m_obd->setDebugCallback(&debugCallback,this);
+	m_obd->setCommsCallback(&commsCallback,this);
 	start();
 }
-void ObdThread::debug(QString msg,DebugLevel level)
+void ObdThread::debug(QString msg,obdLib::DebugLevel level)
 {
-	if (level <= m_dbgLevel)
+	if (level >= m_dbgLevel)
 	{
-		qDebug() << msg;
+		qDebug() << "obdlib debug callback:" << msg;
 	}
+	emit debugMessage(msg,level);
 }
-void ObdThread::setDebugLevel(DebugLevel level)
+void ObdThread::commsDebug(QString msg)
+{
+	emit rawCommsMessage(msg);
+	qDebug() << "Comms:" << msg;
+}
+
+void ObdThread::setDebugLevel(obdLib::DebugLevel level)
 {
 	m_dbgLevel = level;
 }
@@ -89,14 +132,14 @@ void ObdThread::disconnect()
 }
 void ObdThread::clearReqList()
 {
-	debug("ObdThread::clearReqList()",DEBUG_VERBOSE);
+	debug("ObdThread::clearReqList()",obdLib::DEBUG_VERBOSE);
 	removePidMutex.lock();
 	m_reqClassListThreaded.clear();
 	removePidMutex.unlock();
 }
 void ObdThread::sendReqTroubleCodes()
 {
-	debug("ObdThread::sendReqTroubleCodes()",DEBUG_VERBOSE);
+	debug("ObdThread::sendReqTroubleCodes()",obdLib::DEBUG_VERBOSE);
 	//qDebug() << "Trouble codes request...";
 	threadLockMutex.lock();
 	RequestClass req;
@@ -330,7 +373,7 @@ void ObdThread::run()
 		threadLockMutex.unlock();
 		first = true;
 		//qDebug() << "Size:" << m_reqClassListThreaded.size();
-		debug("Size: " + QString::number(m_reqClassListThreaded.size()),DEBUG_VERY_VERBOSE);
+		//debug("Size: " + QString::number(m_reqClassListThreaded.size()),DEBUG_VERY_VERBOSE);
 		for (int i=0;i<m_reqClassListThreaded.count();i++)
 		{
 			//Handle request here
@@ -338,7 +381,7 @@ void ObdThread::run()
 			{
 				if (!m_connect())
 				{
-					debug("Unable to connect",DEBUG_ERROR);
+					debug("Unable to connect",obdLib::DEBUG_ERROR);
 					//qDebug() << "Unable to connect";
 					//emit liberror(UNABLE_TO_OPEN_COM_PORT);
 					continue;
@@ -497,7 +540,7 @@ void ObdThread::run()
 					qDebug() << "Request:" << reqstr << QString::number(pids[j]);
 					m_obd->sendObdRequestString(reqstr.toStdString().c_str(),5,&reply,100,5);
 					QString response="";
-					for (int k=0;k<reply.size();k++)
+					for (unsigned int k=0;k<reply.size();k++)
 					{
 						response += reply[k];
 					}
@@ -631,7 +674,7 @@ void ObdThread::run()
 					qDebug() << "Sending confirmation";
 					m_obd->sendObdRequestString("\r",1,&reply,1,1);
 					QString vect = "";
-					for (int i=0;i<reply.size();i++)
+					for (unsigned int i=0;i<reply.size();i++)
 					{
 						vect.append(reply.at(i));
 					}
@@ -670,7 +713,7 @@ void ObdThread::run()
 				m_obd->sendObdRequestString("0101\r",5,&replyVector,100,5);
 				QString vect2 = "";
 
-				for (int j=0;j<replyVector.size();j++)
+				for (unsigned int j=0;j<replyVector.size();j++)
 				{
 					if (replyVector[j] != '\n' && replyVector[j] != '\r' && replyVector[j] != ' ')
 					{
@@ -685,7 +728,7 @@ void ObdThread::run()
 				else
 				{
 					qDebug() << "MONITOR_STATUS size: " << vect2.size();
-					unsigned char one = m_obd->byteArrayToByte(vect2[4].toAscii(),vect2[5].toAscii());
+					//unsigned char one = m_obd->byteArrayToByte(vect2[4].toAscii(),vect2[5].toAscii());
 					unsigned char two = m_obd->byteArrayToByte(vect2[6].toAscii(),vect2[7].toAscii());
 					unsigned char three = m_obd->byteArrayToByte(vect2[8].toAscii(),vect2[9].toAscii());
 					unsigned char four = m_obd->byteArrayToByte(vect2[10].toAscii(),vect2[11].toAscii());
@@ -788,7 +831,7 @@ void ObdThread::run()
 
 				QString vect2 = "";
 
-				for (int j=0;j<replyVector.size();j++)
+				for (unsigned int j=0;j<replyVector.size();j++)
 				{
 					if (replyVector[j] != '\n' && replyVector[j] != '\r' && replyVector[j] != ' ')
 					{
@@ -828,7 +871,7 @@ void ObdThread::run()
 				else
 				{
 
-					for (int j=0;j<replyVector.size();j++)
+					for (unsigned int j=0;j<replyVector.size();j++)
 					{
 						if (replyVector[j] != '\n' && replyVector[j] != '\r' && replyVector[j] != ' ')
 						{
@@ -857,7 +900,7 @@ void ObdThread::run()
 				//vect.clear();
 				QString vect2 = "";
 
-				for (int j=0;j<replyVector.size();j++)
+				for (unsigned int j=0;j<replyVector.size();j++)
 				{
 					if (replyVector[j] != '\n' && replyVector[j] != '\r' && replyVector[j] != ' ')
 					{
@@ -1280,7 +1323,7 @@ void ObdThread::run()
 								if (!allislost && !m_whiteList[&m_reqClassListThreaded[i]] && m_reqClassFailureMap[&m_reqClassListThreaded[i]] > 20)
 								{
 									//qDebug() << "Reached Maximum errors for pid. Disabling: " << req.mid(0,req.length()-1);
-									debug("Reached maximum errors for pid. Disabling: " + req.mid(0,req.length()-1),DEBUG_WARN);
+									debug("Reached maximum errors for pid. Disabling: " + req.mid(0,req.length()-1),obdLib::DEBUG_WARN);
 									emit consoleMessage(QString("Reached maximum errors for pid ") + req.mid(0,req.length()-1) + QString(". Removing from request list."));
 									m_reqClassFailureMap.remove(&m_reqClassListThreaded[i]);
 									m_reqClassListThreaded.removeAt(i);
@@ -1300,7 +1343,7 @@ void ObdThread::run()
 							{
 								//errorCount++;
 								//qDebug() << "Serial read/write error on request" << req.mid(0,req.length()-1);
-								debug("Serial read/write error on request " + req.mid(0,req.length()-1),DEBUG_FATAL);
+								debug("Serial read/write error on request " + req.mid(0,req.length()-1),obdLib::DEBUG_FATAL);
 								emit consoleMessage("Serial read/write error on request" + req.mid(0,req.length()-1));
 
 
@@ -1347,7 +1390,7 @@ void ObdThread::run()
 							else
 							{
 								//qDebug() << "Invalid Pid returned:" << req.mid(0,req.length()-1);
-								debug("Invalid PID returned from ObdInfo::getPidFromString()!!!",DEBUG_ERROR);
+								debug("Invalid PID returned from ObdInfo::getPidFromString()!!!",obdLib::DEBUG_ERROR);
 								emit consoleMessage(QString("Invalid PID returned from ObdInfo::getPidFromString(): ") + req.mid(0,req.length()-1));
 							}
 						}
@@ -1435,8 +1478,8 @@ bool ObdThread::initElm()
 	for (int i=0;i<2;i++)
 	{
 		//These are to fix issues with certain devices like obdpro's tool.
-		if (!m_obd->sendObdRequestString(CR,1,&replyVector,100,5));
-		if (!m_obd->sendObdRequestString(CR,1,&replyVector,100,5));
+		if (!m_obd->sendObdRequestString(CR,1,&replyVector,100,5)) {}
+		if (!m_obd->sendObdRequestString(CR,1,&replyVector,100,5)) {}
 
 		if (i == 1)
 		{
@@ -1444,7 +1487,7 @@ bool ObdThread::initElm()
 			{
 				emit consoleMessage("Error resetting ELM Device");
 				//qDebug() << "Error resetting ELM device";
-				debug("Error resetting ELM Device",DEBUG_ERROR);
+				debug("Error resetting ELM Device",obdLib::DEBUG_ERROR);
 				if (i == 1) return false;
 			}
 		}
@@ -1453,7 +1496,7 @@ bool ObdThread::initElm()
 		{
 			emit consoleMessage("Error turning echo off");
 			//qDebug() << "Error turning echo off";
-			debug("Error turning off echo",DEBUG_ERROR);
+			debug("Error turning off echo",obdLib::DEBUG_ERROR);
 			if (i == 1) return false;
 			continue;
 		}
@@ -1461,7 +1504,7 @@ bool ObdThread::initElm()
 		{
 			emit consoleMessage("Error turning headers off");
 			//qDebug() << "Error turning headers off";
-			debug("Error turning off headers",DEBUG_ERROR);
+			debug("Error turning off headers",obdLib::DEBUG_ERROR);
 			if (i == 1) return false;
 			continue;
 		}
@@ -1469,7 +1512,7 @@ bool ObdThread::initElm()
 		{
 			emit consoleMessage("Error turning linefeeds off");
 			//qDebug() << "Error turning linefeeds off";
-			debug("Error turning linefeeds off",DEBUG_ERROR);
+			debug("Error turning linefeeds off",obdLib::DEBUG_ERROR);
 			if (i == 1) return false;
 			continue;
 		}
@@ -1478,7 +1521,7 @@ bool ObdThread::initElm()
 		{
 			emit consoleMessage("Error in detecting protocol");
 			//qDebug() << "Error in finding protocol";
-			debug("Error finding protocol with 0100",DEBUG_ERROR);
+			debug("Error finding protocol with 0100",obdLib::DEBUG_ERROR);
 			if (i == 1) return false;
 			continue;
 		}
@@ -1499,7 +1542,7 @@ bool ObdThread::resetElm()
 	if (!m_obd->sendObdRequestString("atz" CR,4,&replyVector,100,5))
 	{
 		//qDebug() << "Error in reset sent";
-		debug("Error when sending reset command",DEBUG_WARN);
+		debug("Error when sending reset command",obdLib::DEBUG_WARN);
 	}
 	for (unsigned int i=0;i<replyVector.size();i++)
 	{
@@ -1514,7 +1557,7 @@ bool ObdThread::resetElm()
 	{
 		//Echoing here?
 		//qDebug() << "Reset echoed:" << reply;
-		debug("Reset echoed: " + reply,DEBUG_VERBOSE);
+		debug("Reset echoed: " + reply,obdLib::DEBUG_VERBOSE);
 		m_obd->flush();
 		usleep(10000);
 		return true;
@@ -1522,7 +1565,7 @@ bool ObdThread::resetElm()
 	else
 	{
 		//qDebug() << "Reset:" << reply;
-		debug("Bad return when resetting :" + reply,DEBUG_WARN);
+		debug("Bad return when resetting :" + reply,obdLib::DEBUG_WARN);
 		return false;
 	}
 }
@@ -1540,7 +1583,7 @@ bool ObdThread::echoOff()
 	{
 		return true;
 	}
-	debug("Bad return when turning echo off :" + reply,DEBUG_WARN);
+	debug("Bad return when turning echo off :" + reply,obdLib::DEBUG_WARN);
 	//qDebug() << "Bad Echo:" << reply;
 	return false;
 }
@@ -1819,17 +1862,17 @@ QString ObdThread::calc(QString str)
 bool ObdThread::m_connect()
 {
 	//qDebug() << "Connecting...";
-	debug("ObdThread::m_connect()",DEBUG_VERBOSE);
+	debug("ObdThread::m_connect()",obdLib::DEBUG_VERBOSE);
 	if (m_obd->openPort(m_port.toStdString().c_str(),m_baud) < 0)
 	{
 		//qDebug() << "Error opening OBD Port";
-		debug("Error opening OBD port",DEBUG_ERROR);
+		debug("Error opening OBD port",obdLib::DEBUG_ERROR);
 		emit liberror(ObdThread::UNABLE_TO_OPEN_COM_PORT);
 		return false;
 	}
 	if (!initElm())
 	{
-		debug("Error in ELM init",DEBUG_ERROR);
+		debug("Error in ELM init",obdLib::DEBUG_ERROR);
 		emit consoleMessage("Error in ELM init, port not opened");
 		m_obd->closePort();
 		//emit disconnected();
@@ -1840,11 +1883,11 @@ bool ObdThread::m_connect()
 	QString version = getElmVersion().replace("\r","").replace("\n","");
 	emit consoleMessage(QString("Elm found. Version: ").append(version));
 	//qDebug() << "Connected to ELM version" << version;
-	debug("Connected to ELM " + version,DEBUG_INFO);
+	debug("Connected to ELM " + version,obdLib::DEBUG_INFO);
 	//setProtocol(0,false);
 	QString protocol = getProtocolName().replace("\r","").replace("\n","");
 	//qDebug() << "Connected protocol:" << protocol;
-	debug("Protocol " + protocol,DEBUG_INFO);
+	debug("Protocol " + protocol,obdLib::DEBUG_INFO);
 	emit protocolReply(protocol);
 	emit connected(version);
 	return true;
@@ -1866,7 +1909,8 @@ QString ObdThread::getProtocolName()
 }
 void ObdThread::setProtocol(int num, bool autosearch)
 {
-
+	Q_UNUSED(num);
+	Q_UNUSED(autosearch);
 	/*if (!m_obd->sendObdRequest("ATSP00\r",7,20))
 	{
 		qDebug() << "Error setting auto-protocol";

@@ -74,6 +74,7 @@ struct obdInfoStruct
 	std::string strUnitLabel;
 	int iBitLookupTable;
 };
+
 class obdLib
 {
 public:
@@ -88,7 +89,15 @@ public:
 		TIMEOUT,
 		NONE
 	};
-
+	enum DebugLevel
+	{
+		DEBUG_VERY_VERBOSE=0,
+		DEBUG_VERBOSE=1,
+		DEBUG_INFO=2,
+		DEBUG_WARN=3,
+		DEBUG_ERROR=4,
+		DEBUG_FATAL=5
+	};
 	obdLib();
 	int openPort(const char *portName,int baudrate);
 	int openPort(const char *portName);
@@ -96,6 +105,8 @@ public:
 	int initPort();
 	int closePort();
 	void flush();
+	void setDebugCallback(void (*callbackptr)(const char*,void*,obdLib::DebugLevel),void *);
+	void setCommsCallback(void (*callbackptr)(const char*,void*),void*);
 	//byte* sendRequest(byte *reqString,int length);
 //	byte* sendRequest(char *asciiReqString, int length);
 	static byte byteArrayToByte(byte b1, byte b2);
@@ -108,7 +119,11 @@ public:
 	bool sendObdRequest(const char *req,int len);
 	bool sendObdRequest(const char *req,int len,int timeout);
 	ObdError lastError();
+
+
 private:
+	void debug(DebugLevel lvl,const char* msg,...);
+	void commsDebug(const char *msg);
 	ObdError m_lastError;
 	std::vector<std::vector<int> > *modeByteCount;
 	std::string versionString;

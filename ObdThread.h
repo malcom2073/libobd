@@ -39,7 +39,7 @@
 #define LIBOBD_VERSION_PATCH 0
 
 
-
+void debugCallback(char *text,void *ptr);
 
 class ObdThread : public QThread
 {
@@ -136,19 +136,10 @@ public:
 		bool repeat;
 		QByteArray custom;
 	};
-	enum DebugLevel
-	{
-		DEBUG_VERY_VERBOSE=0,
-		DEBUG_VERBOSE=1,
-		DEBUG_INFO=2,
-		DEBUG_WARN=3,
-		DEBUG_ERROR=4,
-		DEBUG_FATAL=5
-	};
-
 	ObdThread(QObject *parent=0);
-	void debug(QString msg,DebugLevel level);
-	void setDebugLevel(DebugLevel level);
+	void debug(QString msg,obdLib::DebugLevel level);
+	void commsDebug(QString msg);
+	void setDebugLevel(obdLib::DebugLevel level);
 	void setPort(QString port);
 	void setBaud(int baud);
 	void addRequest(int mode, int pid, int priority,int wait);
@@ -183,7 +174,7 @@ protected:
 	void run2();
 private:
 	QStringList parseCode(QString code,QString type);
-	DebugLevel m_dbgLevel;
+	obdLib::DebugLevel m_dbgLevel;
 	QMutex threadLockMutex;
 	QMutex loopTypeMutex;
 	QMutex removePidMutex;
@@ -236,5 +227,7 @@ signals:
 	void consoleMessage(QString message);
 	void obdPortFound(QString portname);
 	void protocolReply(QString protocol);
+	void rawCommsMessage(QString msg);
+	void debugMessage(QString msg,obdLib::DebugLevel lvl);
 };
 #endif //OBDTHREAD_H

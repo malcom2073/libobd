@@ -23,15 +23,52 @@
 #include <iostream>
 #include <fstream>
 #include <string.h>
-
+#include <cstdarg>
+void (*debugCallback)(const char *,void*,obdLib::DebugLevel) = NULL;
+void (*commsCallback)(const char *,void*) = NULL;
+void *debugUserData = NULL;
+void *commsUserData = NULL;
 obdLib::obdLib()
 {
-	m_lastError = NONE;	
+	m_lastError = NONE;
+	debugCallback = 0;
+	commsCallback = 0;
 }
 
 int obdLib::openPort(const char *portName)
 {
 	return openPort(portName,-1);
+}
+void obdLib::setDebugCallback(void (*callbackptr)(const char*,void*,obdLib::DebugLevel),void *usrdata)
+{
+	printf("Calling setDebugCallback: %i\n",debugCallback);
+	debugCallback = callbackptr;
+	debugUserData = usrdata;
+	printf("Calling setDebugCallback: %i\n",debugCallback);
+}
+void obdLib::setCommsCallback(void (*callbackptr)(const char*,void*),void* usrdata)
+{
+	commsCallback = callbackptr;
+	commsUserData = usrdata;
+}
+void obdLib::debug(DebugLevel lvl,const char* msg,...)
+{
+	char fmsg[4096];
+	va_list vl;
+	va_start(vl,msg);
+	vsnprintf(fmsg,sizeof(fmsg),msg,vl);
+	if (debugCallback != 0)
+	{
+		debugCallback(fmsg,debugUserData,lvl);
+	}
+	va_end(vl);
+}
+void obdLib::commsDebug(const char *msg)
+{
+	if (commsCallback != 0)
+	{
+		commsCallback(msg,commsUserData);
+	}
 }
 
 int obdLib::openPort(const char *portName,int baudrate)
@@ -75,10 +112,13 @@ int obdLib::openPort(const char *portName,int baudrate)
 #else
 	//NEED TO USE BAUD RATE HERE!!!: baudrate
 	//printf("Attempting to open COM port\n");
+	debug(obdLib::DEBUG_VERBOSE,"Attempting to open com port %s",portName);
 	portHandle = open(portName,O_RDWR | O_NOCTTY | O_NDELAY);
 	if (portHandle < 0)
 	{
 		printf("Error opening Com: %s\n",portName);
+		debug(obdLib::DEBUG_ERROR,"Error opening com port %s",portName);
+
 		return -1;
 	}
 	printf("Com Port Opened %i\n",portHandle);
@@ -253,6 +293,7 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 	int loc = 0;
 	int len = 0;
 	time_t seconds = time(NULL);
+	commsDebug(req);
 #ifdef WINVER
 	if (!::WriteFile(portHandle, (void*)req, (DWORD)length, (LPDWORD)&len, NULL)) {
 		//DWORD error = GetLastError();
@@ -380,6 +421,7 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 	}
 	//printf("Total Reply Size: %i\n",loc);
 	totalReply[loc] = '\0';
+	commsDebug(totalReply);
 	int errorlen = strspn("NODATA",totalReply);
 	if (errorlen == 6)
 	{
