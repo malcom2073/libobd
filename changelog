@@ -1,0 +1,22 @@
+Version 0.8.1
+
+API Breaks:
+* None
+
+Internal Changes:
+* Change of DEBUG_LEVEL enum. It has been moved from ObdThread to obdLib. This should not affect anyone yet.
+
+Functionality Changes:
+* Addition of non-CAN mode 06. This is in pre-alpha, so it is not recommended to use it yet.
+* Added 115200 baud, set default to 38400 (if no baud is specified)
+
+New signals: 
+void rawCommsMessage(QString msg);
+	Called for every serial read or write. This is a QString representation of the exact data sent or recieved, including carrige returns, invalid characters, everything.
+void debugMessage(QString msg, obdLib::DebugLevel lvl);
+	Debugging messages. I've not yet converted all debug messages over from qDebug and printf to this, so it is unreliable at best.
+
+
+
+Version: 0.8
+Initial start of version tracking.
