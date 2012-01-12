@@ -45,6 +45,8 @@ class ObdThread : public QThread
 {
 	Q_OBJECT
 public:
+	//! OBD Library Errors
+	/*! Thie enum is used to describe obd errors */
 	enum ObdError
 	{
 		UNABLE_TO_OPEN_COM_PORT,
@@ -52,6 +54,9 @@ public:
 		WRITE_ERROR
 	};
 
+	//! Types of requests in the ObdThread event loop
+	/*! These are generally only used internally, however they are available for use
+for custom requests. */
 	enum RequestType
 	{
 		TROUBLE_CODES,
@@ -136,13 +141,44 @@ public:
 		bool repeat;
 		QByteArray custom;
 	};
+	//! Constructor
+	/*! Setting a parent is optional, since ObdThread generally lives for the
+	entire life of the application */
+
 	ObdThread(QObject *parent=0);
+
+
 	void debug(QString msg,obdLib::DebugLevel level);
 	void commsDebug(QString msg);
 	void setDebugLevel(obdLib::DebugLevel level);
+
+	//! Set the port on which ObdThread operatoes
+	/*! This should be something like COM1, COM5, or //./COM20 on windows. /dev/ttyS0 or /dev/ttyUSB0 on *nix systems */
+
 	void setPort(QString port);
+
+	//! Set the baud rate which ObdThread opens the serial port with
+	/*! Valid baud rates include 9600, 38400, 115200, and a few others. These three are the primary ones
+	that most tools use. */
+
 	void setBaud(int baud);
+
+	//! Adds a repeat mode/pid request to the queue
+	/*! This will add a request to the queue to be repeaidly requested. Example: obdThread->addRequest(0x01,0x0D,1,1);
+
+	\param mode integer mode, 0x01 or 0x05 for instance
+	\param pid integer pid, 0x0D for vehicle speed
+	\param priority how often the pid gets requested. 1 is every cycle, 3 is every third cycle, etc
+	\param wait This should be set to 0 unless you know what you're doing.*/
+
 	void addRequest(int mode, int pid, int priority,int wait);
+
+	//! Removes a repeat mode/pid request to the queue
+	/*! This will remove a previously added mode/pid request that matches mode, pid, and priority.
+	\param mode integer mode, 0x01 or 0x05 for instance
+	\param pid integer pid, 0x0D for vehicle speed
+	\param priority hot often the pid gets requested */
+
 	void removeRequest(int mode, int pid, int priority);
 	void addRequest(RequestClass req);
 	void removeRequest(RequestClass req);
@@ -210,7 +246,7 @@ private:
 
 signals:
 	//void monitorTestReply(QList<QString> list);
-	void monitorTestReply(QMap<CONTINUOUS_MONITOR,MONITOR_COMPLETE_STATUS> monitorlist);
+	void monitorTestReply(QMap<ObdThread::CONTINUOUS_MONITOR,ObdThread::MONITOR_COMPLETE_STATUS> monitorlist);
 	void onBoardMonitoringReply(QList<unsigned char> midlist,QList<unsigned char> tidlist,QList<QString> vallist,QList<QString> minlist,QList<QString> maxlist,QList<QString> passlist);
 	void mfgStringReply(QString string);
 	void liberror(ObdThread::ObdError err);

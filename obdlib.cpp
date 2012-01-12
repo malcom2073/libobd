@@ -131,8 +131,10 @@ int obdLib::openPort(const char *portName,int baudrate)
 	switch (baudrate)
 	{
 		case 38400:
-		default:
 			BAUD = B38400;
+			break;
+		case 115200:
+			BAUD  = B19200;
 			break;
 		case 19200:
 			BAUD  = B19200;
@@ -142,6 +144,9 @@ int obdLib::openPort(const char *portName,int baudrate)
 			break;
 		case 4800:
 			BAUD  = B4800;
+			break;
+		default:
+			BAUD = B38400;
 			break;
 	}  //end of switch baud_rate
 	if (strspn("/dev/pts",portName) >= 8)
