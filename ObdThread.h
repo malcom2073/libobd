@@ -34,14 +34,37 @@
 
 
 
-
 #define LIBOBD_VERSION_MAJOR 0
-#define LIBOBD_VERSION_MINOR 9
-#define LIBOBD_VERSION_PATCH 0
+#define LIBOBD_VERSION_MINOR 8
+#define LIBOBD_VERSION_PATCH 1
 
 
 void debugCallback(char *text,void *ptr);
 
+
+//! Main class for interfacing with ELM based scan tools.
+/*! This is the primary class for using libobd. Upon instantiation, you should call ObdThread::start() to start the event loop, 
+then connect your slots to ObdThread signals. Then you can start sending requests via ObdThread::addRequest, or functions such 
+as ObdThread::sendReqSupportedModes. \n\n Example usage:\n\n
+ObdThread *thread = new Obdthread();\n
+connect(thread,SIGNAL(pidReply(QString,QString,int,double)),this,SLOT(obdPidReply(QString,QString,int,double)));\n
+thread->start();\n
+thread->addRequest(0x01,0x0C,1,0);\n
+
+void MyClass::obdPidReply(QString pid,QString val, int set, double time)\n
+{\n
+	qDebug() << "pid is:" << pid << "val is:" << val << "set is:" << set << "time is:" << time;\n
+}\n
+\n\n\n
+This will give an output of something along the lines of\n
+"pid is: 010C val is: 35 set is: 1 time is: 123350304"\n\n
+
+A few useful notes:\n
+It is considered safe to call val.toDouble().\n
+A way to convert from pid to two unsigned char values is included with obdLib:\n
+unsigned char mode = obdLib::byteArrayToByte(pid[0].toAscii(),pid[1].toAscii());\n
+unsigned char pid = obdLib::byteArrayToByte(pid[2].toAscii(),pid[3].toAscii());\n
+*/
 class ObdThread : public QThread
 {
 	Q_OBJECT
@@ -109,6 +132,9 @@ for custom requests. */
 		UNAVAILABLE
 	};
 
+
+	//! RequestClass
+	/*! Req */
 	class RequestClass
 	{
 	public:
@@ -181,16 +207,43 @@ for custom requests. */
 	\param priority hot often the pid gets requested */
 
 	void removeRequest(int mode, int pid, int priority);
+
+	//! Convenience function for adding requests to the event loop.
+	/*! This will add a request defined by a RequestClass object. This can be any type of request that is accepted by ObdThread.
+	\param req RequestClass object */
+
 	void addRequest(RequestClass req);
+
 	void removeRequest(RequestClass req);
 	void sendReqSupportedPids();
 	//void setInfo(ObdInfo *info) { m_obdInfo = info; }
 	ObdInfo *getInfo() { return m_obdInfo; }
+
+	//! Connect to an OBD scan tool
+	/*! Connects to a scan tool previously defined by ObdThread::setPort and ObdThread::setBaud */
+
 	void connect();
+
+	//! Disconnects from an OBD scan tool
+	/*! Disconnects from the currently connected scan tool */
+
 	void disconnect();
+
+	//! Clears request list
+	/*! Clears the entire request list. This goes  in as a request, so it may not take effect immediatly,
+	and some requests may still be processed before this request goes through and clears the list */
+
 	void clearReqList();
+
+	//! Sends a request to clear trouble codes
+	/*! Adds a request to clear trouble codes. This request will have no response */
 	void sendClearTroubleCodes();
+
+	//! Sends a request for Mode 06 onboard monitors
+	/*! Adds a request to retrieve Mode 06 on board monitors, if supported. */
+
 	void sendReqOnBoardMonitors();
+
 	void sendReqVoltage();
 	void sendReqSupportedModes();
 	void sendReqMfgString();
@@ -200,16 +253,24 @@ for custom requests. */
 	void sendSingleShotBlindRequest(QByteArray request);
 	void stopThread() { m_threadRunning = false; }
 	void sendReqTroubleCodes();
+
+	//! Starts the ObdThread event loop
+	/*! This function starts the thread associated with libobd. This function must be called before any other functions, however it is 
+	acceptable to connect signals before calling this function. */
+
 	void start();
 	void sendReqMonitorStatus();
 	QString port() { return m_port; }
+
+	//! Convenience function for finding which port the ELM device is connected to
+	/*! This function cycles through serial ports on the computer, sending ATI commands in an attempt to find the ELM device */
+
 	void findObdPort();
 	QString version() { return QString::number(LIBOBD_VERSION_MAJOR) + "." + QString::number(LIBOBD_VERSION_MINOR) + "." + QString::number(LIBOBD_VERSION_PATCH); }
 
-protected:
+private:
 	void run();
 	void run2();
-private:
 	QStringList parseCode(QString code,QString type);
 	obdLib::DebugLevel m_dbgLevel;
 	QMutex threadLockMutex;

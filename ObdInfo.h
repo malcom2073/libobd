@@ -23,6 +23,9 @@
 #include <QString>
 #include <QList>
 
+
+//! SAE1979 information
+/*! This class contains definitions for SAE1979 modes, pids, and other misc information. It is localized in english  */
 class ObdInfo
 {
 public:
