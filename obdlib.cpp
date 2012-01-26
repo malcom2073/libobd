@@ -460,6 +460,10 @@ bool obdLib::sendObdRequest(const char *req,int length,std::vector<byte> *reply,
 	{
 		return false;
 	}
+	if (tmpReply.size() == 0)
+	{
+		return false;
+	}
 	for (unsigned int i=0;i<tmpReply.size()-1;i++)
 	{
 		if ((tmpReply[i] != 0x20) && (tmpReply[i] != '\r') && (tmpReply[i] != '\n'))
