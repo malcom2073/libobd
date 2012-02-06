@@ -91,7 +91,7 @@ void ObdThread::debug(QString msg,obdLib::DebugLevel level)
 void ObdThread::commsDebug(QString msg)
 {
 	emit rawCommsMessage(msg);
-	qDebug() << "Comms:" << msg;
+	//qDebug() << "Comms:" << msg;
 }
 
 void ObdThread::setDebugLevel(obdLib::DebugLevel level)
