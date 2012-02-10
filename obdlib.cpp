@@ -134,7 +134,7 @@ int obdLib::openPort(const char *portName,int baudrate)
 			BAUD = B38400;
 			break;
 		case 115200:
-			BAUD  = B19200;
+			BAUD  = B115200;
 			break;
 		case 19200:
 			BAUD  = B19200;
