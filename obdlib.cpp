@@ -116,12 +116,13 @@ int obdLib::openPort(const char *portName,int baudrate)
 	portHandle = open(portName,O_RDWR | O_NOCTTY | O_NDELAY);
 	if (portHandle < 0)
 	{
-		printf("Error opening Com: %s\n",portName);
+		//printf("Error opening Com: %s\n",portName);
 		debug(obdLib::DEBUG_ERROR,"Error opening com port %s",portName);
 
 		return -1;
 	}
-	printf("Com Port Opened %i\n",portHandle);
+	//printf("Com Port Opened %i\n",portHandle);
+	debug(obdLib::DEBUG_VERBOSE,"Com Port Opened %i",portHandle);
 	fcntl(portHandle, F_SETFL, 0); //Set it to blocking. This is required? Wtf?
 	struct termios oldtio;
 	struct termios newtio;
@@ -151,7 +152,8 @@ int obdLib::openPort(const char *portName,int baudrate)
 	}  //end of switch baud_rate
 	if (strspn("/dev/pts",portName) >= 8)
 	{
-		printf("PTS detected... disabling baud rate selection: %s\n",portName);
+		debug(obdLib::DEBUG_WARN,"PTS Detected... disabling baud rate selection on: %s",portName);
+		//printf("PTS detected... disabling baud rate selection: %s\n",portName);
 		baudrate = -1;
 	}
 	else
@@ -184,8 +186,7 @@ int obdLib::openPort(const char *portName,int baudrate)
 		{
 			perror("cfsetospeed");
 		}
-
-		printf("Setting baud rate to %i on port %s\n",baudrate,portName);
+		debug(obdLib::DEBUG_VERBOSE,"Setting baud rate to %i on port %s\n",baudrate,portName);
 	}
 	tcsetattr(portHandle,TCSANOW,&newtio);
 	//newtio.c_cc[VMIN] = 0; //Minimum number of bytes to read

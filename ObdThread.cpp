@@ -1592,6 +1592,7 @@ bool ObdThread::initElm()
 				debug("Error resetting ELM Device",obdLib::DEBUG_ERROR);
 				if (i == 1) return false;
 			}
+			setProtocol(0,false);
 		}
 		//Ensure echo, headers, and linefeeds are off.
 		if (!echoOff())
@@ -2013,8 +2014,8 @@ void ObdThread::setProtocol(int num, bool autosearch)
 {
 	Q_UNUSED(num);
 	Q_UNUSED(autosearch);
-	/*if (!m_obd->sendObdRequest("ATSP00\r",7,20))
+	if (!m_obd->sendObdRequest("ATSP00\r",7,20))
 	{
 		qDebug() << "Error setting auto-protocol";
-	}*/
+	}
 }
