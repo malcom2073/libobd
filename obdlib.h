@@ -38,7 +38,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <termios.h>
-#	define STDCALL
+#define STDCALL
 #	define byte unsigned char
 #	define HANDLE int
 #	define DWORD long

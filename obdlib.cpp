@@ -477,3 +477,104 @@ bool obdLib::sendObdRequest(const char *req,int length,std::vector<byte> *reply,
 }
 
 
+extern "C" {
+	STDCALL void *obdLibNew()
+	{
+		return new obdLib();
+	}
+	STDCALL int obdLibOpenPort(void *ptr,const char *portname,int baudrate)
+	{
+		obdLib *lib = ((obdLib*)ptr);
+		return lib->openPort(portname,baudrate);
+	}
+	STDCALL int obdLibClosePort(void *ptr)
+	{
+		obdLib *lib = ((obdLib*)ptr);
+		return lib->closePort();
+	}
+	STDCALL int obdLibInitPort(void *ptr)
+	{
+		obdLib *lib = ((obdLib*)ptr);
+		return lib->initPort();
+	}
+	STDCALL void obdLibDelete(void *ptr)
+	{
+		obdLib *lib = ((obdLib*)ptr);
+		delete lib;
+	}
+
+	//bool sendObdRequestString(const char *req,int length,std::vector<byte> *reply,int sleeptime, int timeout);
+	//bool sendObdRequest(const char *req,int length,std::vector<byte> *reply,int sleep, int timeout);
+	//bool sendObdRequest(const char *req,int length,std::vector<byte> *reply,int sleep, int timeout);
+	STDCALL bool obdLibSendObdRequest(void *ptr,const char *req,int length, char *reply,int replylength,int sleeptime, int timeout)
+	{
+		obdLib *lib = ((obdLib*)ptr);
+		std::vector<byte> replyvect;
+		if (!lib->sendObdRequest(req,length,&replyvect,sleeptime,timeout))
+		{
+			return false;
+		}
+		if (replyvect.size() > replylength)
+		{
+			//Not enough room in the buffer
+			return false;
+		}
+		for (int i=0;i<replyvect.size();i++)
+		{
+			reply[i] = replyvect.at(i);
+		}
+		reply[replyvect.size()] = '.';
+		return true;
+	}
+	STDCALL void setEcho(void *ptr,bool on)
+	{
+		obdLib *lib = ((obdLib*)ptr);
+		if (on)
+		{
+			lib->sendObdRequest("ate1\r",5,250);
+		}
+		else
+		{
+			lib->sendObdRequest("ate0\r",5,250);
+		}
+
+	}
+	STDCALL bool obdLibSendObdRequestString(void *ptr,const char *req,int length, char *reply,int replylength,int *replylengthptr,int sleeptime, int timeout)
+	{
+		obdLib *lib = ((obdLib*)ptr);
+		std::vector<byte> replyvect;
+		if (!lib->sendObdRequestString(req,length,&replyvect,sleeptime,timeout))
+		{
+			reply[0] = -1;
+			reply[1] = 1;
+			reply[2] = lib->lastError();
+			return false;
+		}
+		//char *tmp = new char(1024);
+		//sprintf(tmp,"ObdRequest returned! Size: %i",replyvect.size());
+		//OutputDebugString(tmp);
+		//fprintf(stderr,"ObdRequest returned! Size %i\n",replyvect.size());
+		if (replyvect.size() > replylength)
+		{
+			//Not enough room in the buffer
+			reply[0] = -1;
+			reply[1] = 2;
+			return false;
+		}
+		for (int i=0;i<replyvect.size();i++)
+		{
+			reply[i] = replyvect.at(i);
+		}
+		//reply[replyvect.size()]='.';
+		*replylengthptr = replyvect.size();
+		if (replyvect.size() == 0)
+		{
+			reply[0] = lib->lastError();
+		}
+		else
+		{
+			reply[0] = replyvect.size();
+		}
+		return true;
+	}
+}
