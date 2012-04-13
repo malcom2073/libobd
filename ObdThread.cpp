@@ -1,6 +1,6 @@
 /**************************************************************************
 *   Copyright (C) 2010                                                    *
-*   Michael Carpenter (malcom2073) <mcarpenter@interforcesystems.com>     *
+*   Michael Carpenter (malcom2073) <malcom2073@gmail.com>                 *
 *   Kevron Rees (tripzero) tripzero.kev@gmail.com                         *
 *                                                                         *
 *   This file is a part of libobd                                         *
