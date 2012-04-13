@@ -28,3 +28,6 @@ headers.path = $$INSTALL_ROOT/usr/include
 
 
 INSTALLS += target headers obd2data
+
+OTHER_FILES += \
+    ObdThread.cs
