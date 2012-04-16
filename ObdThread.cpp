@@ -292,7 +292,79 @@ void ObdThread::MX_setSWCanMode(int num)
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
+void ObdThread::ST_addPassFilter(QString filter)
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = RAW_REQUEST;
+	QByteArray reqbytes;
+	reqbytes.append("STFAP" + filter + "\r");
+	req.custom = reqbytes;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
 
+void ObdThread::ST_addBlockFilter(QString filter)
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = RAW_REQUEST;
+	QByteArray reqbytes;
+	reqbytes.append("STFAB" + filter + "\r");
+	req.custom = reqbytes;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+void ObdThread::ST_addFlowControlFilter(QString filter)
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = RAW_REQUEST;
+	QByteArray reqbytes;
+	reqbytes.append("STFAFC" + filter + "\r");
+	req.custom = reqbytes;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+void ObdThread::ST_clearPassFilters()
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = RAW_REQUEST;
+	QByteArray reqbytes;
+	reqbytes.append("FCP\r");
+	req.custom = reqbytes;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+void ObdThread::ST_clearBlockFilters()
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = RAW_REQUEST;
+	QByteArray reqbytes;
+	reqbytes.append("FCB\r");
+	req.custom = reqbytes;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+void ObdThread::ST_clearFlowFilters()
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = RAW_REQUEST;
+	QByteArray reqbytes;
+	reqbytes.append("FCFC\r");
+	req.custom = reqbytes;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
 void ObdThread::MX_setBaudRate(int baud)
 {
 	threadLockMutex.lock();

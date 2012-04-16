@@ -257,6 +257,12 @@ for custom requests. */
 	void MX_setSWCanMode(int num);
 	void MX_setBaudRate(int baud);
 	void MX_checkBaudRate();
+	void ST_addPassFilter(QString filter);
+	void ST_addBlockFilter(QString filter);
+	void ST_addFlowControlFilter(QString filter);
+	void ST_clearPassFilters();
+	void ST_clearBlockFilters();
+	void ST_clearFlowFilters();
 	void sendSingleShotRequest(QByteArray request);
 	void sendSingleShotBlindRequest(QByteArray request);
 	void stopThread() { m_threadRunning = false; }
