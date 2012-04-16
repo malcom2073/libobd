@@ -97,6 +97,8 @@ for custom requests. */
 		DISCONNECT,
 		START_REQ_LOOP,
 		STOP_REQ_LOOP,
+		START_MONITOR,
+		STOP_MONITOR,
 		FIND_PORT,
 		VOLTAGE,
 		SWITCH_BAUD,
@@ -249,6 +251,8 @@ for custom requests. */
 	void sendReqMfgString();
 	void sendReqFullPidScan();
 	void switchBaud();
+	void startMonitorMode();
+	void stopMonitorMode();
 	void sendSingleShotRequest(QByteArray request);
 	void sendSingleShotBlindRequest(QByteArray request);
 	void stopThread() { m_threadRunning = false; }
@@ -278,6 +282,7 @@ private:
 	QMutex removePidMutex;
 	bool m_obdConnected;
 	ObdInfo *m_obdInfo;
+	volatile bool m_monitorMode;
 	int loopType;
 	QList<RequestClass> m_reqClassList;
 	QList<RequestClass> m_reqClassListThreaded;
@@ -308,6 +313,7 @@ private:
 
 signals:
 	//void monitorTestReply(QList<QString> list);
+	void monitorModeLine(QString line);
 	void monitorTestReply(QMap<ObdThread::CONTINUOUS_MONITOR,ObdThread::MONITOR_COMPLETE_STATUS> monitorlist);
 	void onBoardMonitoringReply(QList<unsigned char> midlist,QList<unsigned char> tidlist,QList<QString> vallist,QList<QString> minlist,QList<QString> maxlist,QList<QString> passlist);
 	void mfgStringReply(QString string);

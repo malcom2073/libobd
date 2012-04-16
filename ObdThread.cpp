@@ -93,6 +93,25 @@ void ObdThread::commsDebug(QString msg)
 	emit rawCommsMessage(msg);
 	//qDebug() << "Comms:" << msg;
 }
+void ObdThread::startMonitorMode()
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = START_MONITOR;
+	m_monitorMode = true;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+
+}
+void ObdThread::stopMonitorMode()
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = STOP_MONITOR;
+	m_monitorMode = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
 
 void ObdThread::setDebugLevel(obdLib::DebugLevel level)
 {
@@ -402,6 +421,20 @@ void ObdThread::run()
 				threadLockMutex.unlock();
 				m_obdConnected = false;
 				emit disconnected();
+
+			}
+			else if (m_reqClassListThreaded[i].type == START_MONITOR)
+			{
+				m_obd->sendObdRequest("ATMA\r",5,-1);
+				while (m_monitorMode)
+				{
+					QString str = QString(m_obd->monitorModeReadLine().c_str());
+					emit monitorModeLine(str);
+				}
+				m_obd->sendObdRequest("\r",1,-1);
+			}
+			else if (m_reqClassListThreaded[i].type == STOP_MONITOR)
+			{
 
 			}
 			else if (m_reqClassListThreaded[i].type == VOLTAGE)
@@ -1385,7 +1418,7 @@ void ObdThread::run()
 			}
 			else if (m_reqClassListThreaded[i].type == MODE_PID)
 			{
-				//qDebug() << "MODE_PID";
+				//qDebug() << "MODE_PID" << m_obdConnected;
 				if (m_obdConnected)
 				{
 					if (first)
@@ -1396,6 +1429,7 @@ void ObdThread::run()
 					if (((cycleCounter % m_reqClassListThreaded[i].priority) == 0) || cycleCounter == 0)
 					{
 						//qDebug() << "Making req" << m_reqList[currentReqNum].mid(0,m_reqList[currentReqNum].length()-1) << m_set << m_reqPriority[currentReqNum] << currentReqNum;
+
 						//if (!m_obd->sendObdRequest(m_reqList[currentReqNum].toStdString().c_str(),m_reqList[currentReqNum].length(),&replyVector))
 						QString req = (m_reqClassListThreaded[i].mode < 16) ? "0" : "";
 						req += QString::number(m_reqClassListThreaded[i].mode,16).toUpper();
@@ -1403,6 +1437,7 @@ void ObdThread::run()
 						req += QString::number(m_reqClassListThreaded[i].pid,16).toUpper();
 						//qDebug() << "Current request:" << req;
 						QString pidreq = req;
+						//qDebug() << "sending req" << req;
 						if (m_reqClassListThreaded[i].wait != 0)
 						{
 							req += " " + QString::number(m_reqClassListThreaded[i].wait);
@@ -1456,6 +1491,7 @@ void ObdThread::run()
 						}
 						else
 						{
+							//emit consoleMessage("Error in recieve!" + QString::number(m_obd->lastError()));
 							m_reqClassFailureMap[&m_reqClassListThreaded[i]] = 0;
 							m_whiteList[&m_reqClassListThreaded[i]] = true;
 							//errorCount = 0;
@@ -1526,6 +1562,7 @@ void ObdThread::setBaud(int baud)
 }
 void ObdThread::addRequest(int mode, int pid, int priority,int wait)
 {
+	debug("Adding: " + QString::number(mode,16) + ":" + QString::number(pid,16),obdLib::DEBUG_VERBOSE);
 	threadLockMutex.lock();
 	RequestClass req;
 	req.mode = mode;

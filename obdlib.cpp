@@ -290,6 +290,49 @@ void obdLib::flush()
 	tcflush(portHandle,TCIFLUSH);	
 #endif
 }
+std::string obdLib::monitorModeReadLine()
+{
+	std::string retval;
+	int len=0;
+	char *tmp = new char[1024];
+	bool breakit = false;
+	while (!breakit)
+	{
+		len = read(portHandle,tmp,1024);
+		if (len < 0)
+		{
+			printf("No Read\n");
+			perror("Error");
+			delete[] tmp;
+			m_lastError = SERIALREADERROR;
+			debug(obdLib::DEBUG_ERROR,"Serial read error");
+			return std::string();
+		}
+		else if (len == 0)
+		{
+		#ifdef WINVER
+			Sleep(10);
+		#else
+			usleep(10000);
+		#endif
+		}
+		else
+		{
+			for (int i=0;i<len;i++)
+			{
+				if (tmp[i] == '\n')
+				{
+					breakit = true;
+				}
+				else
+				{
+					retval.append(1,tmp[i]);
+				}
+			}
+		}
+	}
+
+}
 bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *reply,int sleeptime, int timeout)
 {
 	reply->clear();
@@ -308,6 +351,7 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 		delete[] totalReply;
 		delete[] tmp;
 		m_lastError = SERIALWRITEERROR;
+		debug(obdLib::DEBUG_ERROR,"Serial write error");
 		return false;
 	}
 #else
@@ -343,6 +387,7 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 			delete[] tmp;
 			delete[] totalReply;
 			m_lastError = SERIALREADERROR;
+			debug(obdLib::DEBUG_ERROR,"Serial read error");
 			return false;
 		}
 #else
@@ -356,7 +401,7 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 			delete[] tmp;
 			delete[] totalReply;
 			m_lastError = SERIALREADERROR;
-
+			debug(obdLib::DEBUG_ERROR,"Serial read error");
 			return false;
 		}
 		else if (len == 0)
@@ -408,6 +453,7 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 				printf("Current reply length: %i\n",loc);
 				delete[] tmp;
 				delete[] totalReply;
+				debug(obdLib::DEBUG_ERROR,"Timeout");
 				return false;
 			}
 		}
@@ -416,6 +462,7 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 			//Not waiting for a reply.
 			delete[] tmp;
 			delete[] totalReply;
+			debug(obdLib::DEBUG_ERROR,"Timeout, not waiting for a reply");
 			return true;
 		}
 	}
@@ -437,11 +484,13 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 		m_lastError = NODATA;
 		delete[] tmp;
 		delete[] totalReply;
+		debug(obdLib::DEBUG_ERROR,"nodata");
 		return false;
 	}
 	delete[] totalReply;
 	delete[] tmp;
 	//tcflush(portHandle,TCIFLUSH);
+	//debug(obdLib::DEBUG_ERROR,"Hunkydory");
 	return true;
 }
 obdLib::ObdError obdLib::lastError()
@@ -453,16 +502,19 @@ bool obdLib::sendObdRequest(const char *req,int length,std::vector<byte> *reply)
 	return sendObdRequest(req,length,reply,100,5);
 }
 
+
 bool obdLib::sendObdRequest(const char *req,int length,std::vector<byte> *reply,int sleep, int timeout)
 {
 	reply->clear();
 	std::vector<byte> tmpReply;
 	if (!sendObdRequestString(req,length,&tmpReply,sleep,timeout))
 	{
+		debug(obdLib::DEBUG_ERROR,"sendObdRequestString returned false!!");
 		return false;
 	}
 	if (tmpReply.size() == 0)
 	{
+		debug(obdLib::DEBUG_ERROR,"sendObdRequestString returned true with a tmpReply size of 0!");
 		return false;
 	}
 	for (unsigned int i=0;i<tmpReply.size()-1;i++)

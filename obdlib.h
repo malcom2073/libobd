@@ -107,6 +107,7 @@ public:
 	void flush();
 	void setDebugCallback(void (*callbackptr)(const char*,void*,obdLib::DebugLevel),void *);
 	void setCommsCallback(void (*callbackptr)(const char*,void*),void*);
+	std::string monitorModeReadLine();
 	//byte* sendRequest(byte *reqString,int length);
 //	byte* sendRequest(char *asciiReqString, int length);
 	static byte byteArrayToByte(byte b1, byte b2);
