@@ -267,6 +267,57 @@ void ObdThread::removeRequest(RequestClass req)
 	m_reqClassRemoveList.append(req);
 	threadLockMutex.unlock();
 }
+void ObdThread::MX_setProtocol(int num)
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = RAW_REQUEST;
+	QByteArray reqbytes;
+	reqbytes.append("STP" + QString::number(num) + "\r");
+	req.custom = reqbytes;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+
+void ObdThread::MX_setSWCanMode(int num)
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = RAW_REQUEST;
+	QByteArray reqbytes;
+	reqbytes.append("STCSWM" + QString::number(num) + "\r");
+	req.custom = reqbytes;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+
+void ObdThread::MX_setBaudRate(int baud)
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = RAW_REQUEST;
+	QByteArray reqbytes;
+	reqbytes.append("STPBR" + QString::number(baud) + "\r");
+	req.custom = reqbytes;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+void ObdThread::MX_checkBaudRate()
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = RAW_REQUEST;
+	QByteArray reqbytes;
+	reqbytes.append("STPBRR\r");
+	req.custom = reqbytes;
+	req.repeat = false;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+
 QStringList ObdThread::parseCode(QString codetoparse,QString type)
 {
 	QStringList codes;

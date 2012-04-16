@@ -253,6 +253,10 @@ for custom requests. */
 	void switchBaud();
 	void startMonitorMode();
 	void stopMonitorMode();
+	void MX_setProtocol(int num);
+	void MX_setSWCanMode(int num);
+	void MX_setBaudRate(int baud);
+	void MX_checkBaudRate();
 	void sendSingleShotRequest(QByteArray request);
 	void sendSingleShotBlindRequest(QByteArray request);
 	void stopThread() { m_threadRunning = false; }
