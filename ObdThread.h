@@ -98,6 +98,8 @@ for custom requests. */
 		START_REQ_LOOP,
 		STOP_REQ_LOOP,
 		START_MONITOR,
+		ST_START_MONITOR,
+		ST_START_FILTER_MONITOR,
 		STOP_MONITOR,
 		FIND_PORT,
 		VOLTAGE,
@@ -263,6 +265,10 @@ for custom requests. */
 	void ST_clearPassFilters();
 	void ST_clearBlockFilters();
 	void ST_clearFlowFilters();
+	void ST_startMonitorMode();
+	void ST_stopMonitorMode();
+	void ST_startFilterMonitorMode();
+	void ST_stopFilterMonitorMode();
 	void sendSingleShotRequest(QByteArray request);
 	void sendSingleShotBlindRequest(QByteArray request);
 	void stopThread() { m_threadRunning = false; }

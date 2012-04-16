@@ -101,7 +101,6 @@ void ObdThread::startMonitorMode()
 	m_monitorMode = true;
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
-
 }
 void ObdThread::stopMonitorMode()
 {
@@ -317,6 +316,36 @@ void ObdThread::ST_addBlockFilter(QString filter)
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
+void ObdThread::ST_startMonitorMode()
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = ST_START_MONITOR;
+	m_monitorMode = true;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+
+void ObdThread::ST_stopMonitorMode()
+{
+	m_monitorMode = false;
+}
+
+void ObdThread::ST_startFilterMonitorMode()
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = ST_START_FILTER_MONITOR;
+	m_monitorMode = true;
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+
+void ObdThread::ST_stopFilterMonitorMode()
+{
+	m_monitorMode = false;
+}
+
 void ObdThread::ST_addFlowControlFilter(QString filter)
 {
 	threadLockMutex.lock();
@@ -549,6 +578,26 @@ void ObdThread::run()
 			else if (m_reqClassListThreaded[i].type == START_MONITOR)
 			{
 				m_obd->sendObdRequest("ATMA\r",5,-1);
+				while (m_monitorMode)
+				{
+					QString str = QString(m_obd->monitorModeReadLine().c_str());
+					emit monitorModeLine(str);
+				}
+				m_obd->sendObdRequest("\r",1,-1);
+			}
+			else if (m_reqClassListThreaded[i].type == ST_START_FILTER_MONITOR)
+			{
+				m_obd->sendObdRequest("STM\r",5,-1);
+				while (m_monitorMode)
+				{
+					QString str = QString(m_obd->monitorModeReadLine().c_str());
+					emit monitorModeLine(str);
+				}
+				m_obd->sendObdRequest("\r",1,-1);
+			}
+			else if (m_reqClassListThreaded[i].type == ST_START_MONITOR)
+			{
+				m_obd->sendObdRequest("STMA\r",5,-1);
 				while (m_monitorMode)
 				{
 					QString str = QString(m_obd->monitorModeReadLine().c_str());
