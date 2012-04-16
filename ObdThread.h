@@ -262,6 +262,7 @@ for custom requests. */
 	void ST_addPassFilter(QString filter);
 	void ST_addBlockFilter(QString filter);
 	void ST_addFlowControlFilter(QString filter);
+	void sendCanMessage(QString msg,bool is29Bit);
 	void ST_clearPassFilters();
 	void ST_clearBlockFilters();
 	void ST_clearFlowFilters();

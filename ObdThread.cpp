@@ -394,6 +394,60 @@ void ObdThread::ST_clearFlowFilters()
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
+void ObdThread::sendCanMessage(QString msg,bool is29Bit)
+{
+	msg = msg.replace(" ","");
+	threadLockMutex.lock();
+	if (is29Bit)
+	{
+		RequestClass priority;
+		priority.type = RAW_REQUEST;
+		QByteArray reqbytes;
+		reqbytes.append("ATCP" + msg.left(2) +"\r");
+		priority.custom = reqbytes;
+		priority.repeat = false;
+
+		RequestClass header;
+		header.type = RAW_REQUEST;
+		reqbytes.clear();
+		reqbytes.append("ATSH" + msg.mid(2,4) + "\r");
+		header.custom = reqbytes;
+		header.repeat = false;
+
+		RequestClass message;
+		message.type = RAW_REQUEST;
+		reqbytes.clear();
+		reqbytes.append(msg.mid(6) + "\r");
+		message.custom = reqbytes;
+		message.repeat = false;
+
+		m_reqClassList.append(priority);
+		m_reqClassList.append(header);
+		m_reqClassList.append(message);
+	}
+	else
+	{
+		QByteArray reqbytes;
+		RequestClass header;
+		header.type = RAW_REQUEST;
+		reqbytes.clear();
+		reqbytes.append("ATSH" + msg.left(3) + "\r");
+		header.custom = reqbytes;
+		header.repeat = false;
+
+		RequestClass message;
+		message.type = RAW_REQUEST;
+
+		reqbytes.append(msg.left(3) +"\r");
+		message.custom = reqbytes;
+		message.repeat = false;
+		//reqbytes.append("ATSH" + QString::number(baud) + "\r");
+		m_reqClassList.append(header);
+		m_reqClassList.append(message);
+	}
+	threadLockMutex.unlock();
+}
+
 void ObdThread::MX_setBaudRate(int baud)
 {
 	threadLockMutex.lock();
