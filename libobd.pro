@@ -6,28 +6,37 @@ TEMPLATE = lib
 TARGET = obd
 DEPENDPATH += .
 INCLUDEPATH += .
+CONFIG -= debug
+
+
+HEADERS += ObdInfo.h obdlib.h ObdThread.h
+SOURCES += ObdInfo.cpp obdlib.cpp ObdThread.cpp
+
+
 win32: {
 CONFIG += staticlib qt
 DEFINES += WINHACK=1
+target.path = c:/libs/libobd/lib
+headers.path = c:/libs/libobd/include
+headers.files = $$HEADERS
 }
-unix:CONFIG += debug qt 
+unix:CONFIG += debug qt
 # create_prl
 # Input
-HEADERS += ObdInfo.h obdlib.h ObdThread.h
-SOURCES += ObdInfo.cpp obdlib.cpp ObdThread.cpp
+
 
 isEmpty( INSTALL_ROOT ){
  INSTALL_ROOT = $$DESTDIR
 }
-
+unix {
 target.path = $$INSTALL_ROOT/usr/lib
 obd2data.path = $$INSTALL_ROOT/usr/share/libobd
 obd2data.files = obd2data.dat
 headers.files = $$HEADERS
 headers.path = $$INSTALL_ROOT/usr/include
+}
 
-
-INSTALLS += target headers obd2data
+INSTALLS += target headers
 
 OTHER_FILES += \
     ObdThread.cs

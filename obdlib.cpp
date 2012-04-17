@@ -128,7 +128,7 @@ int obdLib::openPort(const char *portName,int baudrate)
 	struct termios newtio;
 	//bzero(&newtio,sizeof(newtio));
 	tcgetattr(portHandle,&newtio);
-	long BAUD = B9600;  
+	long BAUD = B9600;
 	switch (baudrate)
 	{
 		case 38400:
@@ -192,7 +192,7 @@ int obdLib::openPort(const char *portName,int baudrate)
 	//newtio.c_cc[VMIN] = 0; //Minimum number of bytes to read
 	//newtio.c_cc[VTIME] = 100; //Read Timeout (10.0 seconds)
 
-	
+
 	//tcflush(portHandle,TCIFLUSH);
 	return 0;
 #endif
@@ -223,7 +223,7 @@ int obdLib::initPort()
 #else
 	usleep(3000000);
 	tcflush(portHandle,TCIFLUSH);
-#endif	
+#endif
 	sendObdRequest("atl0\r",5);
 	sendObdRequest("ath0\r",5);
 	sendObdRequest("010C\r",5);
@@ -287,7 +287,7 @@ void obdLib::flush()
 #ifdef WINVER
 
 #else
-	tcflush(portHandle,TCIFLUSH);	
+	tcflush(portHandle,TCIFLUSH);
 #endif
 }
 std::string obdLib::monitorModeReadLine()
@@ -298,7 +298,19 @@ std::string obdLib::monitorModeReadLine()
 	bool breakit = false;
 	while (!breakit)
 	{
+#ifndef WINHACK
 		len = read(portHandle,tmp,1024);
+#else
+	if (!ReadFile(portHandle,(LPVOID)tmp,1024,(LPDWORD)&len,NULL))
+		{
+			delete[] tmp;
+			m_lastError = SERIALREADERROR;
+			debug(obdLib::DEBUG_ERROR,"Serial read error");
+	    return "";
+		}
+
+#endif
+
 		if (len < 0)
 		{
 			printf("No Read\n");
@@ -432,7 +444,7 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 					printf(" :End\n\n");
 					*/
 					continueLoop = false;
-				}	
+				}
 			}
 		}
 		if (timeout > 0)
