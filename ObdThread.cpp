@@ -634,7 +634,7 @@ void ObdThread::run()
 				m_obd->sendObdRequest("ATMA\r",5,-1);
 				while (m_monitorMode)
 				{
-					QString str = QString(m_obd->monitorModeReadLine().c_str());
+					QByteArray str = QByteArray(m_obd->monitorModeReadLine().c_str());
 					emit monitorModeLine(str);
 				}
 				m_obd->sendObdRequest("\r",1,-1);
@@ -644,7 +644,7 @@ void ObdThread::run()
 				m_obd->sendObdRequest("STM\r",5,-1);
 				while (m_monitorMode)
 				{
-					QString str = QString(m_obd->monitorModeReadLine().c_str());
+					QByteArray str = QByteArray(m_obd->monitorModeReadLine().c_str());
 					emit monitorModeLine(str);
 				}
 				m_obd->sendObdRequest("\r",1,-1);
@@ -654,7 +654,7 @@ void ObdThread::run()
 				m_obd->sendObdRequest("STMA\r",5,-1);
 				while (m_monitorMode)
 				{
-					QString str = QString(m_obd->monitorModeReadLine().c_str());
+					QByteArray str = QByteArray(m_obd->monitorModeReadLine().c_str());
 					emit monitorModeLine(str);
 				}
 				m_obd->sendObdRequest("\r",1,-1);

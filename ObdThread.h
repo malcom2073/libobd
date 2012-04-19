@@ -330,7 +330,7 @@ private:
 
 signals:
 	//void monitorTestReply(QList<QString> list);
-	void monitorModeLine(QString line);
+	void monitorModeLine(QByteArray line);
 	void monitorTestReply(QMap<ObdThread::CONTINUOUS_MONITOR,ObdThread::MONITOR_COMPLETE_STATUS> monitorlist);
 	void onBoardMonitoringReply(QList<unsigned char> midlist,QList<unsigned char> tidlist,QList<QString> vallist,QList<QString> minlist,QList<QString> maxlist,QList<QString> passlist);
 	void mfgStringReply(QString string);
