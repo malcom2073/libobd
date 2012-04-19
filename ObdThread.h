@@ -172,26 +172,24 @@ for custom requests. */
 		bool repeat;
 		QByteArray custom;
 	};
+
 	//! Constructor
 	/*! Setting a parent is optional, since ObdThread generally lives for the
 	entire life of the application */
-
 	ObdThread(QObject *parent=0);
 
-
+public slots:
 	void debug(QString msg,obdLib::DebugLevel level);
 	void commsDebug(QString msg);
 	void setDebugLevel(obdLib::DebugLevel level);
 
 	//! Set the port on which ObdThread operatoes
 	/*! This should be something like COM1, COM5, or //./COM20 on windows. /dev/ttyS0 or /dev/ttyUSB0 on *nix systems */
-
 	void setPort(QString port);
 
 	//! Set the baud rate which ObdThread opens the serial port with
 	/*! Valid baud rates include 9600, 38400, 115200, and a few others. These three are the primary ones
 	that most tools use. */
-
 	void setBaud(int baud);
 
 	//! Adds a repeat mode/pid request to the queue
@@ -201,7 +199,6 @@ for custom requests. */
 	\param pid integer pid, 0x0D for vehicle speed
 	\param priority how often the pid gets requested. 1 is every cycle, 3 is every third cycle, etc
 	\param wait This should be set to 0 unless you know what you're doing.*/
-
 	void addRequest(int mode, int pid, int priority,int wait);
 
 	//! Removes a repeat mode/pid request to the queue
@@ -209,13 +206,11 @@ for custom requests. */
 	\param mode integer mode, 0x01 or 0x05 for instance
 	\param pid integer pid, 0x0D for vehicle speed
 	\param priority hot often the pid gets requested */
-
 	void removeRequest(int mode, int pid, int priority);
 
 	//! Convenience function for adding requests to the event loop.
 	/*! This will add a request defined by a RequestClass object. This can be any type of request that is accepted by ObdThread.
 	\param req RequestClass object */
-
 	void addRequest(RequestClass req);
 
 	void removeRequest(RequestClass req);
@@ -225,18 +220,15 @@ for custom requests. */
 
 	//! Connect to an OBD scan tool
 	/*! Connects to a scan tool previously defined by ObdThread::setPort and ObdThread::setBaud */
-
 	void connect();
 
 	//! Disconnects from an OBD scan tool
 	/*! Disconnects from the currently connected scan tool */
-
 	void disconnect();
 
 	//! Clears request list
 	/*! Clears the entire request list. This goes  in as a request, so it may not take effect immediatly,
 	and some requests may still be processed before this request goes through and clears the list */
-
 	void clearReqList();
 
 	//! Sends a request to clear trouble codes
@@ -245,31 +237,72 @@ for custom requests. */
 
 	//! Sends a request for Mode 06 onboard monitors
 	/*! Adds a request to retrieve Mode 06 on board monitors, if supported. */
-
 	void sendReqOnBoardMonitors();
 
+	//! Sends a request to the scantool to read voltage
+	/*! Uses "ATRV\r" for this request */
 	void sendReqVoltage();
+
+
 	void sendReqSupportedModes();
 	void sendReqMfgString();
 	void sendReqFullPidScan();
 	void switchBaud();
+
+
+	//! Start monitor mode
+	/*! This uses ATMA to monitor the OBD bus. Protocol must be set before this point for this to do anything*/
 	void startMonitorMode();
+	//! Stop monitor mode
 	void stopMonitorMode();
+
+	//! Set protocol of Obdlink MX
+	/*! This uses STP XX to set the protocol*/
 	void MX_setProtocol(int num);
+
+	//! Set SW Can mode of Obdlink MX
+	/*! This uses STCWM X to set the mode.*/
 	void MX_setSWCanMode(int num);
+
+	//! Set the OBD baud rate of Obdlink MX
+	/*! Uses STPBR to set the baud rate*/
 	void MX_setBaudRate(int baud);
+
+	//! Check baud rate of Obdlink MX
+	/*! This uses STPBRR to check the baud rate and see if it is equal to what was set with MX_setBaudRate*/
 	void MX_checkBaudRate();
+
+	//! Add Pass CAN filter
+	/*! filter is in the form "pattern,mask", such as ST_addPassFilter("07E8,07FF"); */
 	void ST_addPassFilter(QString filter);
+
+	//! Add Block CAN filter
 	void ST_addBlockFilter(QString filter);
+
+	//! Add Flow Control CAN filter
 	void ST_addFlowControlFilter(QString filter);
+
+	//! Send raw can message.
+	/*! This message should include the appriate header for 11 or 29bit, whichever is selected*/
 	void sendCanMessage(QString msg,bool is29Bit);
+
+	//! Clear Pass CAN filters
 	void ST_clearPassFilters();
+	//! Clear Block CAN filters
 	void ST_clearBlockFilters();
+	//! Clear Flow Control CAN filters
 	void ST_clearFlowFilters();
+	//! Start STN1100 specific monitor mode
 	void ST_startMonitorMode();
+	//! Stop STN1100 specific monitor mode
 	void ST_stopMonitorMode();
+
+	//! Start STN1100 specific filtered monitor mode
 	void ST_startFilterMonitorMode();
+	//! Stop STN1100 specific filtered monitor omde
 	void ST_stopFilterMonitorMode();
+
+
 	void sendSingleShotRequest(QByteArray request);
 	void sendSingleShotBlindRequest(QByteArray request);
 	void stopThread() { m_threadRunning = false; }
@@ -278,15 +311,15 @@ for custom requests. */
 	//! Starts the ObdThread event loop
 	/*! This function starts the thread associated with libobd. This function must be called before any other functions, however it is 
 	acceptable to connect signals before calling this function. */
-
 	void start();
+
 	void sendReqMonitorStatus();
 	QString port() { return m_port; }
 
 	//! Convenience function for finding which port the ELM device is connected to
 	/*! This function cycles through serial ports on the computer, sending ATI commands in an attempt to find the ELM device */
-
 	void findObdPort();
+
 	QString version() { return QString::number(LIBOBD_VERSION_MAJOR) + "." + QString::number(LIBOBD_VERSION_MINOR) + "." + QString::number(LIBOBD_VERSION_PATCH); }
 
 private:
