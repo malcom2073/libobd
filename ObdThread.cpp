@@ -117,11 +117,19 @@ void ObdThread::setDebugLevel(obdLib::DebugLevel level)
 	m_dbgLevel = level;
 }
 
-void ObdThread::connect()
+void ObdThread::connect(bool init)
 {
 	threadLockMutex.lock();
 	RequestClass req;
 	req.type = CONNECT;
+	if (init)
+	{
+		req.custom.append("1");
+	}
+	else
+	{
+		req.custom.append("0");
+	}
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
@@ -605,7 +613,19 @@ void ObdThread::run()
 			//Handle request here
 			if (m_reqClassListThreaded[i].type == CONNECT)
 			{
-				if (!m_connect())
+				bool init = true;
+				if (m_reqClassListThreaded[i].custom.size() > 0)
+				{
+					if (m_reqClassListThreaded[i].custom[0] == '0')
+					{
+						init = false;
+					}
+					else if (m_reqClassListThreaded[i].custom[0] == '1')
+					{
+						init = true;
+					}
+				}
+				if (!m_connect(init))
 				{
 					debug("Unable to connect",obdLib::DEBUG_ERROR);
 					//qDebug() << "Unable to connect";
@@ -2225,7 +2245,7 @@ QString ObdThread::calc(QString str)
 	}
 	return str;
 }
-bool ObdThread::m_connect()
+bool ObdThread::m_connect(bool init)
 {
 	//qDebug() << "Connecting...";
 	debug("ObdThread::m_connect()",obdLib::DEBUG_VERBOSE);
@@ -2236,14 +2256,17 @@ bool ObdThread::m_connect()
 		emit liberror(ObdThread::UNABLE_TO_OPEN_COM_PORT);
 		return false;
 	}
-	if (!initElm())
+	if (init)
 	{
-		debug("Error in ELM init",obdLib::DEBUG_ERROR);
-		emit consoleMessage("Error in ELM init, port not opened");
-		m_obd->closePort();
-		//emit disconnected();
-		//continue;
-		return false;
+		if (!initElm())
+		{
+			debug("Error in ELM init",obdLib::DEBUG_ERROR);
+			emit consoleMessage("Error in ELM init, port not opened");
+			m_obd->closePort();
+			//emit disconnected();
+			//continue;
+			return false;
+		}
 	}
 	//m_obdConnected = true;
 	QString version = getElmVersion().replace("\r","").replace("\n","");
@@ -2254,15 +2277,15 @@ bool ObdThread::m_connect()
 	QString protocol = getProtocolName().replace("\r","").replace("\n","");
 	//qDebug() << "Connected protocol:" << protocol;
 	debug("Protocol " + protocol,obdLib::DEBUG_INFO);
-	emit protocolReply(protocol);
 	emit connected(version);
+	emit protocolReply(protocol);
 	return true;
 }
 QString ObdThread::getProtocolName()
 {
 	std::vector<unsigned char> replyVector;
 	QString reply="";
-	m_obd->sendObdRequestString("0100\r",5,&replyVector,20,5);
+	//m_obd->sendObdRequestString("0100\r",5,&replyVector,20,5);
 	m_obd->sendObdRequestString("ATDP\r",5,&replyVector,100);
 	reply = "";
 	for (unsigned int i=0;i<replyVector.size();i++)

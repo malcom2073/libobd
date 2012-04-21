@@ -220,7 +220,7 @@ public slots:
 
 	//! Connect to an OBD scan tool
 	/*! Connects to a scan tool previously defined by ObdThread::setPort and ObdThread::setBaud */
-	void connect();
+	void connect(bool init=true);
 
 	//! Disconnects from an OBD scan tool
 	/*! Disconnects from the currently connected scan tool */
@@ -351,7 +351,7 @@ private:
 	int m_set;
 	QString parse(QString str);
 	QString calc(QString str);
-	bool m_connect();
+	bool m_connect(bool init=true);
 	bool initElm();
 	bool resetElm();
 	bool echoOff();
@@ -363,9 +363,19 @@ private:
 
 signals:
 	//void monitorTestReply(QList<QString> list);
+
+	//! Monitor mode reply signal.
+	/*! This function is called for any of the three monitor mode functions, startMonitorMode, ST_startMonitorMode, and ST_startFilterMonitorMode
+		line is the newline terminated result from the vehicle. Each message should be its own line, and each line should be a complete
+		message	*/
 	void monitorModeLine(QByteArray line);
+
+	//! Continuous onboard monitoring test reply
 	void monitorTestReply(QMap<ObdThread::CONTINUOUS_MONITOR,ObdThread::MONITOR_COMPLETE_STATUS> monitorlist);
+	//! Mode $06 reply
 	void onBoardMonitoringReply(QList<unsigned char> midlist,QList<unsigned char> tidlist,QList<QString> vallist,QList<QString> minlist,QList<QString> maxlist,QList<QString> passlist);
+
+	//! OBD tool manufacturer
 	void mfgStringReply(QString string);
 	void liberror(ObdThread::ObdError err);
 	void voltageReply(double volts);
@@ -374,6 +384,7 @@ signals:
 	void disconnected();
 	void reqLoopStarted();
 	void reqLoopStopped();
+	//! Main reply function for standard mode 1 pid requests.
 	void pidReply(QString pid,QString val,int set,double time);
 	void singleShotReply(QByteArray request, QByteArray list);
 	void supportedPidsReply(QList<QString> list);
@@ -381,7 +392,11 @@ signals:
 	void consoleMessage(QString message);
 	void obdPortFound(QString portname);
 	void protocolReply(QString protocol);
+
+	//! Signal for raw serial communications logging
 	void rawCommsMessage(QString msg);
+
+	//! Debugging signal
 	void debugMessage(QString msg,obdLib::DebugLevel lvl);
 };
 #endif //OBDTHREAD_H
