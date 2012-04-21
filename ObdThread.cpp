@@ -222,7 +222,35 @@ void ObdThread::sendReqMfgString()
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
+void ObdThread::setHeader(bool on)
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = ELM_COMMAND;
+	req.custom = QByteArray("ATH") + (on ? "1" : "0") + "\r";
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
 
+void ObdThread::setEcho(bool on)
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = ELM_COMMAND;
+	req.custom = QByteArray("ATE") + (on ? "1" : "0") + "\r";
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
+
+void ObdThread::setLineFeed(bool on)
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = ELM_COMMAND;
+	req.custom = QByteArray("ATL") + (on ? "1" : "0") + "\r";
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
 void ObdThread::sendReqSupportedModes()
 {
 	threadLockMutex.lock();
@@ -649,6 +677,27 @@ void ObdThread::run()
 				emit disconnected();
 
 			}
+			else if (m_reqClassListThreaded[i].type == ELM_COMMAND)
+			{
+				std::vector<unsigned char> replyVector;
+				QString reply="";
+				m_obd->sendObdRequestString(m_reqClassListThreaded[i].custom,m_reqClassListThreaded[i].custom.length(),&replyVector,20,3);
+				reply = "";
+				for (unsigned int i=0;i<replyVector.size();i++)
+				{
+					reply += replyVector[i];
+				}
+				if (reply.contains("OK"))
+				{
+					//Command successful
+				}
+				else
+				{
+					//Command failed here
+					emit elmCommandFailed(m_reqClassListThreaded[i].custom);
+				}
+				//return false;
+			}
 			else if (m_reqClassListThreaded[i].type == START_MONITOR)
 			{
 				m_obd->sendObdRequest("ATMA\r",5,-1);
@@ -788,7 +837,8 @@ void ObdThread::run()
 					qDebug() << "Protocol Number:" << vect;
 				}
 				QString protNum = vect;
-				setHeaders(true); //Neccesary for proper reading
+				//setHeaders(true); //Neccesary for proper reading
+				headersOn();
 				std::vector<unsigned char> reply;
 				if (vect == "A3")
 				{
@@ -1241,7 +1291,8 @@ void ObdThread::run()
 				{
 				}
 
-				setHeaders(true);
+				//setHeaders(true);
+				headersOn();
 				std::vector<unsigned char> replyVector;
 				//troubleCodes(QList<QString> codes)
 				QString vect = "";
@@ -1262,7 +1313,8 @@ void ObdThread::run()
 					qDebug() << "Protocol Number:" << vect;
 				}
 				QString protNum = vect;
-				setHeaders(true); //Neccesary for proper reading
+				//setHeaders(true); //Neccesary for proper reading
+				headersOn();
 				if (!m_obd->sendObdRequestString("03\r",3,&replyVector))
 				{
 					//qDebug() << "Error retreiving trouble codes";
@@ -1886,7 +1938,7 @@ bool ObdThread::initElm()
 			if (i == 1) return false;
 			continue;
 		}
-		if (!setHeaders(false))
+		if (!headersOff())
 		{
 			emit consoleMessage("Error turning headers off");
 			//qDebug() << "Error turning headers off";
@@ -1973,18 +2025,28 @@ bool ObdThread::echoOff()
 	//qDebug() << "Bad Echo:" << reply;
 	return false;
 }
-bool ObdThread::setHeaders(bool on)
+bool ObdThread::headersOn()
 {
 	std::vector<unsigned char> replyVector;
 	QString reply="";
-	if (on)
+	m_obd->sendObdRequestString("ath1\r",5,&replyVector,20,3);
+	reply = "";
+	for (unsigned int i=0;i<replyVector.size();i++)
 	{
-		m_obd->sendObdRequestString("ath1\r",5,&replyVector,20,3);
+		reply += replyVector[i];
 	}
-	else
+	if (reply.contains("OK"))
 	{
-		m_obd->sendObdRequestString("ath0\r",5,&replyVector,20,3);
+		return true;
 	}
+	return false;
+}
+
+bool ObdThread::headersOff()
+{
+	std::vector<unsigned char> replyVector;
+	QString reply="";
+	m_obd->sendObdRequestString("ath0\r",5,&replyVector,20,3);
 	reply = "";
 	for (unsigned int i=0;i<replyVector.size();i++)
 	{

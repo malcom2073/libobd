@@ -99,6 +99,7 @@ for custom requests. */
 		STOP_REQ_LOOP,
 		START_MONITOR,
 		ST_START_MONITOR,
+		ELM_COMMAND,
 		ST_START_FILTER_MONITOR,
 		STOP_MONITOR,
 		FIND_PORT,
@@ -251,7 +252,7 @@ public slots:
 
 
 	//! Start monitor mode
-	/*! This uses ATMA to monitor the OBD bus. Protocol must be set before this point for this to do anything*/
+	/*! This uses ATMA tQStringo monitor the OBD bus. Protocol must be set before this point for this to do anything*/
 	void startMonitorMode();
 	//! Stop monitor mode
 	void stopMonitorMode();
@@ -320,6 +321,10 @@ public slots:
 	/*! This function cycles through serial ports on the computer, sending ATI commands in an attempt to find the ELM device */
 	void findObdPort();
 
+	void sendElmCommand(QString cmd);
+	void setHeader(bool on);
+	void setEcho(bool on);
+	void setLineFeed(bool on);
 	QString version() { return QString::number(LIBOBD_VERSION_MAJOR) + "." + QString::number(LIBOBD_VERSION_MINOR) + "." + QString::number(LIBOBD_VERSION_PATCH); }
 
 private:
@@ -355,7 +360,9 @@ private:
 	bool initElm();
 	bool resetElm();
 	bool echoOff();
-	bool setHeaders(bool on);
+	//bool setHeaders(bool on);
+	bool headersOff();
+	bool headersOn();
 	bool lineFeedOff();
 	QString getElmVersion();
 	QString getProtocolName();
@@ -384,6 +391,7 @@ signals:
 	void disconnected();
 	void reqLoopStarted();
 	void reqLoopStopped();
+	void elmCommandFailed(QString command);
 	//! Main reply function for standard mode 1 pid requests.
 	void pidReply(QString pid,QString val,int set,double time);
 	void singleShotReply(QByteArray request, QByteArray list);
