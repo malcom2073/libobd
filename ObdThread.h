@@ -31,7 +31,10 @@
 #include "obdlib.h"
 #include <QByteArray>
 #include <QVector>
-
+#include <qglobal.h>
+#ifndef WINHACK
+#define WINHACK Q_OS_WIN32
+#endif
 
 
 #define LIBOBD_VERSION_MAJOR 0

@@ -25,6 +25,7 @@
 
 #include <string>
 //#define WINHACK
+
 #ifdef WINHACK
 #define M_SleepSec(x) Sleep(1000 * x);
 #include <windows.h>
