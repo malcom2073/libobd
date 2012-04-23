@@ -637,7 +637,7 @@ extern "C" {
 		}
 		else
 		{
-			reply[0] = replyvect.size();
+			//reply[0] = replyvect.size();
 		}
 		return true;
 	}
