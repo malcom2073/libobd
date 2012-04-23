@@ -231,6 +231,15 @@ void ObdThread::setHeader(bool on)
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
+void ObdThread::sendElmcommand(QString cmd)
+{
+	threadLockMutex.lock();
+	RequestClass req;
+	req.type = ELM_COMMAND;
+	req.custom = cmd + "\r";
+	m_reqClassList.append(req);
+	threadLockMutex.unlock();
+}
 
 void ObdThread::setEcho(bool on)
 {
