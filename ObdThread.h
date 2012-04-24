@@ -37,9 +37,9 @@
 #endif
 
 
-#define LIBOBD_VERSION_MAJOR 0
-#define LIBOBD_VERSION_MINOR 8
-#define LIBOBD_VERSION_PATCH 1
+#define LIBOBD_VERSION_MAJOR 1
+#define LIBOBD_VERSION_MINOR 0
+#define LIBOBD_VERSION_PATCH 0
 
 
 void debugCallback(char *text,void *ptr);

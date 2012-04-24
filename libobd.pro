@@ -12,6 +12,8 @@ CONFIG -= debug
 HEADERS += ObdInfo.h obdlib.h ObdThread.h
 SOURCES += ObdInfo.cpp obdlib.cpp ObdThread.cpp
 
+VERSION = 1.0.0
+PROJECT_NAME = libobd
 
 win32: {
 CONFIG += staticlib qt
@@ -34,6 +36,13 @@ obd2data.path = $$INSTALL_ROOT/usr/share/libobd
 obd2data.files = obd2data.dat
 headers.files = $$HEADERS
 headers.path = $$INSTALL_ROOT/usr/include
+dist.commands += rm -fR $${PROJECT_NAME}-$${VERSION} &&
+dist.commands += git clone . $${PROJECT_NAME}-$${VERSION} &&
+dist.commands += rm -fR $${PROJECT_NAME}-$${VERSION}/.git &&
+dist.commands += tar cjf $${PROJECT_NAME}-$${VERSION}.tar.bz2 $${PROJECT_NAME}-$${VERSION} &&
+dist.commands += rm -fR $${PROJECT_NAME}-$${VERSION} &&
+dist.commands += echo "make dist complete."
+QMAKE_EXTRA_TARGETS += dist
 }
 
 INSTALLS += target headers
