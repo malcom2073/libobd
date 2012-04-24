@@ -149,6 +149,12 @@ ObdInfo::ObdInfo()
 	pidList.append(new Pid(0x01,0x1C,"OBDStandards","OBD Standards this vehicle conforms to","","","011C",0,0,true));
 	pidList.append(new Pid(0x01,0x1D,"O2Sensors","Oxygen Sensors Present","","","011D",0,0,true));
 	pidList.append(new Pid(0x01,0x1E,"AuxInput","Auxillary Input Status","","","011E",0,0,true));
+	pidList.append(new Pid(0x01,0x1F,"RunTime","Run Time Since Engine Start","seconds","(A*256)+B","011F",0,65535,false));
+	pidList.append(new pid(0x01,0x21,"DistanceWithMIL","Distance traveled with MIL on","km","(A*256)+B","0121",0,65535,false));
+	pidList.append(new Pid(0x01,0x22,"FuelPressure","Fuel Rail Pressure (relative to manifold vacume)","kPa","((A*256)+B)*0.079","0122",0,5177.256,false));
+	pidList.append(new Pid(0x01,0x23,"FuelPressure","Fuel Rail Pressure (diesel, or direct inject gas)","kPa","((A*256)+B)*10","0123",0,655350,false));
+
+
 	pidList.append(new Pid(0x01,0x2F,"FuelLevel","Fuel Level Input","%","A*(100/255)","012F",0,100,false));
 	pidList.append(new Pid(0x01,0x46,"AmbientAir","Ambient Air Temp","C","A-40","0146",-40,215,false));
 

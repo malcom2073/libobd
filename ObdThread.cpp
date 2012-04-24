@@ -1508,9 +1508,9 @@ void ObdThread::run()
 					//pidList.append(QList<int>());
 					if (j != 3 && j != 4 && j != 2)
 					{
-						for (int j=0;j<0x20;j++)
+						for (int k=0;k<0x20;k++)
 						{
-							pid = QString("0").append(QString::number(j)).append(((j < 16) ? "0" : "")).append(QString::number(j,16));
+							pid = QString("0").append(QString::number(j)).append(((j < 16) ? "0" : "")).append(QString::number(k,16));
 							if (!m_obd->sendObdRequest(QString(pid + "\r").toStdString().c_str(),pid.length()+1,&reply))
 							{
 								if (m_obd->lastError() == obdLib::NODATA)
