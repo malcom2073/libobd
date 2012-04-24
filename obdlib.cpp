@@ -306,7 +306,7 @@ std::string obdLib::monitorModeReadLine()
 			delete[] tmp;
 			m_lastError = SERIALREADERROR;
 			debug(obdLib::DEBUG_ERROR,"Serial read error");
-	    return "";
+			return "";
 		}
 
 #endif
@@ -343,6 +343,7 @@ std::string obdLib::monitorModeReadLine()
 			}
 		}
 	}
+	return retval;
 
 }
 bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *reply,int sleeptime, int timeout)
