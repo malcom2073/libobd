@@ -353,7 +353,7 @@ private:
 	QString m_port;
 	QByteArray m_singleShotReqBytes;
 	int m_baud;
-	bool m_threadRunning;
+	volatile bool m_threadRunning;
 	bool m_requestLoopRunning;
 	obdLib *m_obd;
 	int m_set;

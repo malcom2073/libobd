@@ -636,7 +636,8 @@ void ObdThread::run()
 		for (int i=0;i<m_reqClassList.count();i++)
 		{
 			//qDebug() << "Adding req" << m_reqClassList[i].type;
-			m_reqClassListThreaded.prepend(m_reqClassList[i]);
+			//m_reqClassListThreaded.prepend(m_reqClassList[i]);
+			m_reqClassListThreaded.append(m_reqClassList[i]);
 			m_reqClassFailureMap[&m_reqClassList[i]] = 0;
 			m_whiteList[&m_reqClassList[i]]=false;
 		}
@@ -647,6 +648,10 @@ void ObdThread::run()
 		//debug("Size: " + QString::number(m_reqClassListThreaded.size()),DEBUG_VERY_VERBOSE);
 		for (int i=0;i<m_reqClassListThreaded.count();i++)
 		{
+			if (!m_threadRunning)
+			{
+				break;
+			}
 			//Handle request here
 			if (m_reqClassListThreaded[i].type == CONNECT)
 			{
@@ -710,7 +715,7 @@ void ObdThread::run()
 			else if (m_reqClassListThreaded[i].type == START_MONITOR)
 			{
 				m_obd->sendObdRequest("ATMA\r",5,-1);
-				while (m_monitorMode)
+				while (m_monitorMode && m_threadRunning)
 				{
 					QByteArray str = QByteArray(m_obd->monitorModeReadLine().c_str());
 					emit monitorModeLine(str);
@@ -720,7 +725,7 @@ void ObdThread::run()
 			else if (m_reqClassListThreaded[i].type == ST_START_FILTER_MONITOR)
 			{
 				m_obd->sendObdRequest("STM\r",5,-1);
-				while (m_monitorMode)
+				while (m_monitorMode && m_threadRunning)
 				{
 					QByteArray str = QByteArray(m_obd->monitorModeReadLine().c_str());
 					emit monitorModeLine(str);
@@ -730,7 +735,7 @@ void ObdThread::run()
 			else if (m_reqClassListThreaded[i].type == ST_START_MONITOR)
 			{
 				m_obd->sendObdRequest("STMA\r",5,-1);
-				while (m_monitorMode)
+				while (m_monitorMode && m_threadRunning)
 				{
 					QByteArray str = QByteArray(m_obd->monitorModeReadLine().c_str());
 					emit monitorModeLine(str);
@@ -857,6 +862,10 @@ void ObdThread::run()
 
 					for (int k=0;k<0xC0;k+=0x20)
 					{
+						if (!m_threadRunning)
+						{
+							break;
+						}
 						QString newreq = QString(QString("06") + ((k == 0) ? "00" : QString::number(k,16)) + "\r");
 						qDebug() << "Requesting:" << newreq;
 						if (m_obd->sendObdRequest(newreq.toStdString().c_str(),5,&reply))
@@ -880,6 +889,10 @@ void ObdThread::run()
 					}
 					for (int j=0;j<pids.size();j++)
 					{
+						if (!m_threadRunning)
+						{
+							break;
+						}
 						QString reqstr = (QString("06") + ((pids[j] < 16) ? "0" : "") + QString::number(pids[j],16).toUpper() + "\r");
 						qDebug() << "Request:" << reqstr << QString::number(pids[j]);
 						m_obd->sendObdRequestString(reqstr.toUpper().toStdString().c_str(),5,&reply,100,5);
@@ -939,6 +952,10 @@ void ObdThread::run()
 					unsigned int var = 0;
 					for (int k=0;k<0xC0;k+=0x20)
 					{
+						if (!m_threadRunning)
+						{
+							break;
+						}
 						QString newreq = QString(QString("06") + ((k == 0) ? "00" : QString::number(k,16)) + "\r");
 						qDebug() << "Requesting:" << newreq;
 						if (m_obd->sendObdRequest(newreq.toStdString().c_str(),5,&reply))
@@ -974,6 +991,10 @@ void ObdThread::run()
 					QList<QString> passlist;
 					for (int j=0;j<pids.size();j++)
 					{
+						if (!m_threadRunning)
+						{
+							break;
+						}
 						QString reqstr = (QString("06") + ((pids[j] < 16) ? "0" : "") + QString::number(pids[j],16).toUpper() + "\r");
 						qDebug() << "Request:" << reqstr << QString::number(pids[j]);
 						m_obd->sendObdRequestString(reqstr.toStdString().c_str(),5,&reply,100,5);
@@ -1856,6 +1877,10 @@ void ObdThread::run()
 			msleep(200);
 		}
 	}
+	if (m_obdConnected)
+	{
+		m_obd->closePort();
+	}
 }
 
 
@@ -2260,6 +2285,7 @@ QString ObdThread::calc(QString str)
 			}
 			if (stop == -1)
 			{
+
 				stop = str.length();
 			}
 			QString tmp2 = str.mid(start+1,stop-(start+1));
