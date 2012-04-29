@@ -648,6 +648,11 @@ void ObdThread::run()
 		//debug("Size: " + QString::number(m_reqClassListThreaded.size()),DEBUG_VERY_VERBOSE);
 		for (int i=0;i<m_reqClassListThreaded.count();i++)
 		{
+			if (!m_obdConnected && m_reqClassListThreaded[i].type != CONNECT)
+			{
+				//Not connected, no connect.
+				continue;
+			}
 			if (!m_threadRunning)
 			{
 				break;
@@ -748,11 +753,6 @@ void ObdThread::run()
 			}
 			else if (m_reqClassListThreaded[i].type == VOLTAGE)
 			{
-				if (!m_obdConnected)
-				{
-					if (!m_connect())
-						continue;
-				};
 				std::vector<unsigned char> reply;
 				QByteArray replyArray;
 				if (!m_obd->sendObdRequestString("ATRV\r",5,&reply,100,5))
@@ -774,21 +774,9 @@ void ObdThread::run()
 					//qDebug() << replyArray;
 					emit voltageReply(QString(replyArray).toDouble());
 				}
-				if (!m_obdConnected)
-				{
-					emit consoleMessage(QString("Disconnected"));
-					m_obd->closePort();
-					emit disconnected();
-				}
-
 			}
 			else if (m_reqClassListThreaded[i].type == REQ_SUPPORTED_MODES)
 			{
-				if (!m_obdConnected)
-				{
-					if (!m_connect())
-						continue;
-				}
 				std::vector<unsigned char> reply;
 				QByteArray replyArray;
 				QList<QString> modelist;
@@ -818,21 +806,9 @@ void ObdThread::run()
 				}
 				//emit singleShotResponse(m_reqClassListThreaded[i].custom,replyArray);
 				emit supportedModesReply(modelist);
-				if (!m_obdConnected)
-				{
-					emit consoleMessage(QString("Disconnected"));
-					m_obd->closePort();
-					emit disconnected();
-				}
 			}
 			else if (m_reqClassListThreaded[i].type == ON_BOARD_MONITORS)
 			{
-				if (!m_obdConnected)
-				{
-					if (!m_connect())
-						continue;
-				}
-
 				QString vect = "";
 				if (!m_obd->sendObdRequestString("ATDPN\r",6,&replyVector))
 				{
@@ -1110,66 +1086,36 @@ void ObdThread::run()
 				{
 					qDebug() << "Unable to disable headers";
 				}
-
-				if (!m_obdConnected)
-				{
-					emit consoleMessage(QString("Disconnected"));
-					m_obd->closePort();
-					emit disconnected();
-				}
 			}
 			else if (m_reqClassListThreaded[i].type == SWITCH_BAUD)
 			{
 				//Switch baud to 38400;
-				if (m_obdConnected)
-				{
-					qDebug() << "Switching baud...";
-					m_obd->sendObdRequest("ATBRD 68\r",9);
-					qDebug() << "Sent request. Closing and reopening port";
-					//usleep(10000);
+				qDebug() << "Switching baud...";
+				m_obd->sendObdRequest("ATBRD 68\r",9);
+				qDebug() << "Sent request. Closing and reopening port";
+				//usleep(10000);
 
-					m_obd->closePort();
-					msleep(100);
-					m_obd->openPort(m_port.toStdString().c_str(),38400);
-					std::vector<unsigned char> reply;
-					qDebug() << "Sending confirmation";
-					m_obd->sendObdRequestString("\r",1,&reply,1,1);
-					QString vect = "";
-					for (unsigned int i=0;i<reply.size();i++)
-					{
-						vect.append(reply.at(i));
-					}
-					qDebug() << "Vect:" << vect;
+				m_obd->closePort();
+				msleep(100);
+				m_obd->openPort(m_port.toStdString().c_str(),38400);
+				std::vector<unsigned char> reply;
+				qDebug() << "Sending confirmation";
+				m_obd->sendObdRequestString("\r",1,&reply,1,1);
+				QString vect = "";
+				for (unsigned int i=0;i<reply.size();i++)
+				{
+					vect.append(reply.at(i));
 				}
+				qDebug() << "Vect:" << vect;
 			}
 			else if (m_reqClassListThreaded[i].type == CLEAR_TROUBLE_CODES)
 			{
 				consoleMessage("Trouble Code Clear Requested...");
-				if (!m_obdConnected)
-				{
-					qDebug() << "CONNECT - MONITOR_STATUS";
-					if (!m_connect())
-						continue;
-				}
 				m_obd->sendObdRequest("04\r",3);
-				if (!m_obdConnected)
-				{
-					emit consoleMessage(QString("Disconnected"));
-					m_obd->closePort();
-					emit disconnected();
-				}
 			}
 			else if (m_reqClassListThreaded[i].type == MONITOR_STATUS)
 			{
 				qDebug() << "MONITOR_STATUS";
-				if (!m_obdConnected)
-				{
-					if (!m_connect())
-					{
-						continue;
-					}
-				}
-
 				std::vector<unsigned char> replyVector;
 				m_obd->sendObdRequestString("0101\r",5,&replyVector,100,5);
 				QString vect2 = "";
@@ -1269,24 +1215,9 @@ void ObdThread::run()
 					emit monitorTestReply(result);
 
 				}
-				if (!m_obdConnected)
-				{
-					qDebug() << "DISCONNECT - MONITOR_STATUS";
-					emit consoleMessage(QString("Disconnected"));
-					m_obd->closePort();
-					emit disconnected();
-				}
 			}
 			else if (m_reqClassListThreaded[i].type == MFG_STRING_ONE)
 			{
-				if (!m_obdConnected)
-				{
-					if (!m_connect())
-					{
-						continue;
-					}
-				}
-
 				std::vector<unsigned char> replyVector;
 				m_obd->sendObdRequestString("AT@1\r",5,&replyVector,100,5);
 
@@ -1301,26 +1232,10 @@ void ObdThread::run()
 					//vect2 += replyVector[j];
 				}
 				emit mfgStringReply(vect2);
-				if (!m_obdConnected)
-				{
-					emit consoleMessage(QString("Disconnected"));
-					m_obd->closePort();
-					emit disconnected();
-				}
-
 			}
 			else if (m_reqClassListThreaded[i].type == TROUBLE_CODES)
 			{
 				consoleMessage("Trouble Codes Requested...");
-				if (!m_obdConnected)
-				{
-					if (!m_connect())
-						continue;
-				}
-				else
-				{
-				}
-
 				//setHeaders(true);
 				headersOn();
 				std::vector<unsigned char> replyVector;
@@ -1445,12 +1360,6 @@ void ObdThread::run()
 				}
 				qDebug() << rett;
 				*/
-				if (!m_obdConnected)
-				{
-					emit consoleMessage(QString("Disconnected"));
-					m_obd->closePort();
-					emit disconnected();
-				}
 				//continue;
 				//qDebug() << rett;
 
@@ -1459,11 +1368,6 @@ void ObdThread::run()
 			}
 			else if (m_reqClassListThreaded[i].type == RAW_REQUEST)
 			{
-				if (!m_obdConnected)
-				{
-					if (!m_connect())
-						continue;
-				}
 				emit consoleMessage("Raw request");
 				qDebug() << "Raw Request";
 				std::vector<unsigned char> reply;
@@ -1479,20 +1383,9 @@ void ObdThread::run()
 					replyArray.append(reply[j]);
 				}
 				emit singleShotReply(m_reqClassListThreaded[i].custom,replyArray);
-				if (!m_obdConnected)
-				{
-					emit consoleMessage(QString("Disconnected"));
-					m_obd->closePort();
-					emit disconnected();
-				}
 			}
 			else if (m_reqClassListThreaded[i].type == RAW_BLIND_REQUEST)
 			{
-				if (!m_obdConnected)
-				{
-					if (!m_connect())
-						continue;
-				}
 				emit consoleMessage("Raw blind request");
 				qDebug() << "Raw blind Request";
 				std::vector<unsigned char> reply;
@@ -1502,12 +1395,6 @@ void ObdThread::run()
 				{
 					emit consoleMessage("Unable to send custom blind request");
 					qDebug() << "Error with custom blind request";
-				}
-				if (!m_obdConnected)
-				{
-					emit consoleMessage(QString("Disconnected"));
-					m_obd->closePort();
-					emit disconnected();
 				}
 			}
 			else if (m_reqClassListThreaded[i].type == START_REQ_LOOP)
@@ -1522,11 +1409,6 @@ void ObdThread::run()
 			{
 				//Full scan for supported pids
 				qDebug() << "Beginning full pid scan";
-				if (!m_obdConnected)
-				{
-					if (!m_connect())
-						continue;
-				}
 				QString pid = "";
 				std::vector<unsigned char> reply;
 				QList<QString> pidList;
@@ -1560,14 +1442,6 @@ void ObdThread::run()
 					}
 				}
 				supportedPidsReply(pidList);
-				if (!m_obdConnected)
-				{
-					emit consoleMessage(QString("Disconnected"));
-					qDebug() << "ELM Disconnected";
-					m_obd->closePort();
-					emit disconnected();
-				}
-
 			}
 			else if (m_reqClassListThreaded[i].type == FIND_PORT)
 			{
@@ -1628,11 +1502,6 @@ void ObdThread::run()
 			}
 			else if (m_reqClassListThreaded[i].type == REQ_SUPPORTED_PIDS)
 			{
-				if (!m_obdConnected)
-				{
-					if (!m_connect())
-						continue;
-				}
 				emit consoleMessage("Requesting supported pids");
 
 				std::vector<unsigned char> replyVector;
@@ -1739,16 +1608,6 @@ void ObdThread::run()
 
 
 				emit supportedPidsReply(pids);
-
-				if (!m_obdConnected)
-				{
-					m_obd->closePort();
-					//m_obdConnected = false;
-					emit disconnected();
-				}
-
-
-
 			}
 			else if (m_reqClassListThreaded[i].type == MODE_PID)
 			{
