@@ -530,7 +530,7 @@ QStringList ObdThread::parseCode(QString codetoparse,QString type)
 		{
 			inCode = true;
 			//Funny little thing. A8 (And A7) have size indicators after the FIRST 43, but not after the second.
-			if (((type == "A8") || (type == "A7") || type == "A6") && codes.size() == 0)
+			if (((type == "A8") || /*(type == "8") ||*/ (type == "7") || (type == "6") || (type == "A7") || type == "A6") && codes.size() == 0)
 			{
 				j+=4;
 			}
@@ -1344,7 +1344,11 @@ void ObdThread::run()
 				}
 				QString protNum = vect;
 				//setHeaders(true); //Neccesary for proper reading
-				headersOn();
+
+				if (!headersOn())
+				{
+					qDebug() << "Error turning headers on!";
+				}
 				if (!m_obd->sendObdRequestString("03\r",3,&replyVector))
 				{
 					//qDebug() << "Error retreiving trouble codes";
@@ -1393,20 +1397,22 @@ void ObdThread::run()
 					QString full = "";
 					QString name = "";
 					//We want to pick up on the string as the beginning,
-					//after all the header stuff. On A7 and A8, this is different.
-					if (protNum == "A7")
+					//after all the header stuff. On A6 A7 and A8, this is different.
+					if (protNum == "A7" || protNum == "7")
 					{
 						full = vectsplitline[k].mid(10);
 						name = vectsplitline[k].mid(6,2);
 					}
-					else if (protNum == "A8" || protNum == "A6")
+					else if (protNum == "A8" || protNum == "A6" || protNum == "8" || protNum == "6")
 					{
 						full = vectsplitline[k].mid(5);
 						name = vectsplitline[k].mid(0,3);
 					}
 					else
 					{
-						full = vectsplitline[k].mid(6,vectsplitline[k].length()-8);
+						full = vectsplitline[k].mid(6,vectsplitline[k].length()-6); //This used to be -8, why?
+						full = full.replace("\n","");
+						full = full.replace("\r","");
 						name = vectsplitline[k].mid(4,2);
 					}
 					bool found = false;

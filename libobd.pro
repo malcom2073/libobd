@@ -6,7 +6,7 @@ TEMPLATE = lib
 TARGET = obd
 DEPENDPATH += .
 INCLUDEPATH += .
-CONFIG -= debug
+CONFIG += debug
 
 
 HEADERS += ObdInfo.h obdlib.h ObdThread.h
