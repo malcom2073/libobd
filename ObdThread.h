@@ -362,9 +362,9 @@ private:
 	bool m_setLineFeed(bool on);
 	bool m_initElm();
 	bool m_resetElm();
-	QString getElmVersion();
-	QString getProtocolName();
-	void setProtocol(int num, bool autosearch);
+	QString m_getElmVersion();
+	QString m_getProtocolName();
+	void m_setProtocol(int num, bool autosearch);
 
 signals:
 	//void monitorTestReply(QList<QString> list);

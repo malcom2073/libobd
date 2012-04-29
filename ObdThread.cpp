@@ -702,9 +702,9 @@ void ObdThread::run()
 				QString reply="";
 				m_obd->sendObdRequestString(m_reqClassListThreaded[i].custom,m_reqClassListThreaded[i].custom.length(),&replyVector,20,3);
 				reply = "";
-				for (unsigned int i=0;i<replyVector.size();i++)
+				for (unsigned int j=0;j<replyVector.size();j++)
 				{
-					reply += replyVector[i];
+					reply += replyVector[j];
 				}
 				if (reply.contains("OK"))
 				{
@@ -885,10 +885,10 @@ void ObdThread::run()
 						if (responsesplit.size() >= 15)
 						{
 							unsigned char limittype = m_obd->byteArrayToByte(responsesplit[4].toAscii(),responsesplit[5].toAscii());
-							unsigned char testhigh = m_obd->byteArrayToByte(responsesplit[6].toAscii(),responsesplit[7].toAscii());
-							unsigned char testlow = m_obd->byteArrayToByte(responsesplit[8].toAscii(),responsesplit[9].toAscii());
-							unsigned char limithigh = m_obd->byteArrayToByte(responsesplit[10].toAscii(),responsesplit[11].toAscii());
-							unsigned char limitlow = m_obd->byteArrayToByte(responsesplit[12].toAscii(),responsesplit[13].toAscii());
+							//unsigned char testhigh = m_obd->byteArrayToByte(responsesplit[6].toAscii(),responsesplit[7].toAscii());
+							//unsigned char testlow = m_obd->byteArrayToByte(responsesplit[8].toAscii(),responsesplit[9].toAscii());
+							//unsigned char limithigh = m_obd->byteArrayToByte(responsesplit[10].toAscii(),responsesplit[11].toAscii());
+							//unsigned char limitlow = m_obd->byteArrayToByte(responsesplit[12].toAscii(),responsesplit[13].toAscii());
 							qDebug() << "Test:" << QString::number(limittype);
 							if (((limittype >> 7) & 1) == 1)
 							{
@@ -1925,7 +1925,7 @@ bool ObdThread::m_initElm()
 				debug("Error resetting ELM Device",obdLib::DEBUG_ERROR);
 				if (i == 1) return false;
 			}
-			setProtocol(0,false);
+			m_setProtocol(0,false);
 		}
 		//Ensure echo, headers, and linefeeds are off.
 		if (!m_setEcho(false))
@@ -2005,7 +2005,7 @@ bool ObdThread::m_resetElm()
 		return false;
 	}
 }
-QString ObdThread::getElmVersion()
+QString ObdThread::m_getElmVersion()
 {
 	std::vector<unsigned char> replyVector;
 	QString reply="";
@@ -2263,19 +2263,19 @@ bool ObdThread::m_connect(bool init)
 		}
 	}
 	//m_obdConnected = true;
-	QString version = getElmVersion().replace("\r","").replace("\n","");
+	QString version = m_getElmVersion().replace("\r","").replace("\n","");
 	emit consoleMessage(QString("Elm found. Version: ").append(version));
 	//qDebug() << "Connected to ELM version" << version;
 	debug("Connected to ELM " + version,obdLib::DEBUG_INFO);
 	//setProtocol(0,false);
-	QString protocol = getProtocolName().replace("\r","").replace("\n","");
+	QString protocol = m_getProtocolName().replace("\r","").replace("\n","");
 	//qDebug() << "Connected protocol:" << protocol;
 	debug("Protocol " + protocol,obdLib::DEBUG_INFO);
 	emit connected(version);
 	emit protocolReply(protocol);
 	return true;
 }
-QString ObdThread::getProtocolName()
+QString ObdThread::m_getProtocolName()
 {
 	std::vector<unsigned char> replyVector;
 	QString reply="";
@@ -2290,12 +2290,13 @@ QString ObdThread::getProtocolName()
 	return reply;
 
 }
-void ObdThread::setProtocol(int num, bool autosearch)
+void ObdThread::m_setProtocol(int num, bool autosearch)
 {
 	Q_UNUSED(num);
 	Q_UNUSED(autosearch);
-	if (!m_obd->sendObdRequest("ATSP00\r",7,20))
+	QString req = QString("ATSP") + (autosearch ? "A" : "") + QString::number(num) + "\r";
+	if (!m_obd->sendObdRequest(req.toStdString().c_str(),req.length(),20))
 	{
-		qDebug() << "Error setting auto-protocol";
+		qDebug() << "Error setting protocol";
 	}
 }

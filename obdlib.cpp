@@ -41,10 +41,10 @@ int obdLib::openPort(const char *portName)
 }
 void obdLib::setDebugCallback(void (*callbackptr)(const char*,void*,obdLib::DebugLevel),void *usrdata)
 {
-	printf("Calling setDebugCallback: %i\n",debugCallback);
+	//printf("Calling setDebugCallback: %i\n",debugCallback);
 	debugCallback = callbackptr;
 	debugUserData = usrdata;
-	printf("Calling setDebugCallback: %i\n",debugCallback);
+	//printf("Calling setDebugCallback: %i\n",debugCallback);
 }
 void obdLib::setCommsCallback(void (*callbackptr)(const char*,void*),void* usrdata)
 {
@@ -124,7 +124,7 @@ int obdLib::openPort(const char *portName,int baudrate)
 	//printf("Com Port Opened %i\n",portHandle);
 	debug(obdLib::DEBUG_VERBOSE,"Com Port Opened %i",portHandle);
 	fcntl(portHandle, F_SETFL, 0); //Set it to blocking. This is required? Wtf?
-	struct termios oldtio;
+	//struct termios oldtio;
 	struct termios newtio;
 	//bzero(&newtio,sizeof(newtio));
 	tcgetattr(portHandle,&newtio);
@@ -429,7 +429,7 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 		{
 			for (int i=0;i<len;i++)
 			{
-				if (/*(tmp[i] != 0x20) && (tmp[i] != '\r') && /*(tmp[i] != '\n') && */(tmp[i] != '>'))
+				if (/*(tmp[i] != 0x20) && (tmp[i] != '\r') && (tmp[i] != '\n') && */(tmp[i] != '>'))
 				{
 					//printf("Byte: %c %i ",tmp[i],tmp[i]);
 					totalReply[loc++] = tmp[i];
@@ -571,7 +571,7 @@ extern "C" {
 	//bool sendObdRequestString(const char *req,int length,std::vector<byte> *reply,int sleeptime, int timeout);
 	//bool sendObdRequest(const char *req,int length,std::vector<byte> *reply,int sleep, int timeout);
 	//bool sendObdRequest(const char *req,int length,std::vector<byte> *reply,int sleep, int timeout);
-	STDCALL bool obdLibSendObdRequest(void *ptr,const char *req,int length, char *reply,int replylength,int sleeptime, int timeout)
+	STDCALL bool obdLibSendObdRequest(void *ptr,const char *req,int length, char *reply,unsigned int replylength,int sleeptime, int timeout)
 	{
 		obdLib *lib = ((obdLib*)ptr);
 		std::vector<byte> replyvect;
@@ -584,7 +584,7 @@ extern "C" {
 			//Not enough room in the buffer
 			return false;
 		}
-		for (int i=0;i<replyvect.size();i++)
+		for (unsigned int i=0;i<replyvect.size();i++)
 		{
 			reply[i] = replyvect.at(i);
 		}
@@ -604,7 +604,7 @@ extern "C" {
 		}
 
 	}
-	STDCALL bool obdLibSendObdRequestString(void *ptr,const char *req,int length, char *reply,int replylength,int *replylengthptr,int sleeptime, int timeout)
+	STDCALL bool obdLibSendObdRequestString(void *ptr,const char *req,int length, char *reply,unsigned int replylength,int *replylengthptr,int sleeptime, int timeout)
 	{
 		obdLib *lib = ((obdLib*)ptr);
 		std::vector<byte> replyvect;
@@ -626,7 +626,7 @@ extern "C" {
 			reply[1] = 2;
 			return false;
 		}
-		for (int i=0;i<replyvect.size();i++)
+		for (unsigned int i=0;i<replyvect.size();i++)
 		{
 			reply[i] = replyvect.at(i);
 		}
