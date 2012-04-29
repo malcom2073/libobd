@@ -332,7 +332,6 @@ public slots:
 
 private:
 	void run();
-	void run2();
 	QStringList parseCode(QString code,QString type);
 	obdLib::DebugLevel m_dbgLevel;
 	QMutex threadLockMutex;
@@ -351,22 +350,18 @@ private:
 	QList<int> m_reqPriority;
 	QList<int> m_errorCount;
 	QString m_port;
-	QByteArray m_singleShotReqBytes;
 	int m_baud;
 	volatile bool m_threadRunning;
 	bool m_requestLoopRunning;
 	obdLib *m_obd;
-	int m_set;
 	QString parse(QString str);
 	QString calc(QString str);
 	bool m_connect(bool init=true);
-	bool initElm();
-	bool resetElm();
-	bool echoOff();
-	//bool setHeaders(bool on);
-	bool headersOff();
-	bool headersOn();
-	bool lineFeedOff();
+	bool m_setHeader(bool on);
+	bool m_setEcho(bool on);
+	bool m_setLineFeed(bool on);
+	bool m_initElm();
+	bool m_resetElm();
 	QString getElmVersion();
 	QString getProtocolName();
 	void setProtocol(int num, bool autosearch);

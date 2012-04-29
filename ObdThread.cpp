@@ -69,7 +69,7 @@ ObdThread::ObdThread(QObject *parent) : QThread(parent)
 	m_threadRunning = false;
 	m_requestLoopRunning = false;
 	loopType = 0;
-	m_set = 0;
+	//m_set = 0;
 	//threadLockMutex.lock();
 	m_obdConnected = false;
 	m_baud = 0;
@@ -828,7 +828,8 @@ void ObdThread::run()
 				}
 				QString protNum = vect;
 				//setHeaders(true); //Neccesary for proper reading
-				headersOn();
+				//headersOn();
+				m_setHeader(true);
 				std::vector<unsigned char> reply;
 				if (vect == "A3")
 				{
@@ -1237,7 +1238,8 @@ void ObdThread::run()
 			{
 				consoleMessage("Trouble Codes Requested...");
 				//setHeaders(true);
-				headersOn();
+				//headersOn();
+				m_setHeader(true);
 				std::vector<unsigned char> replyVector;
 				//troubleCodes(QList<QString> codes)
 				QString vect = "";
@@ -1260,7 +1262,7 @@ void ObdThread::run()
 				QString protNum = vect;
 				//setHeaders(true); //Neccesary for proper reading
 
-				if (!headersOn())
+				if (!m_setHeader(true))
 				{
 					qDebug() << "Error turning headers on!";
 				}
@@ -1478,7 +1480,7 @@ void ObdThread::run()
 							{
 								m_obd->openPort(portList[k].toStdString().c_str());
 							}
-							if (!initElm())
+							if (!m_initElm())
 							{
 								qDebug() << "Error";
 								m_obd->closePort();
@@ -1739,6 +1741,9 @@ void ObdThread::run()
 		removePidMutex.unlock();
 		if (m_reqClassListThreaded.size() == 0 || !m_obdConnected)
 		{
+			/*debug("Loop complete, but nothing to do!",obdLib::DEBUG_VERY_VERBOSE);
+			debug("List size: " + QString::number(m_reqClassListThreaded.size()),obdLib::DEBUG_VERY_VERBOSE);
+			debug("m_obdConnected: " + (m_obdConnected ? "true" : "false"),obdLib::DEBUG_VERY_VERBOSE);*/
 			msleep(200);
 		}
 	}
@@ -1807,7 +1812,101 @@ QString ObdThread::parse(QString str)
 	//qDebug() << "Final Answer:" << done;
 	return done;
 }
-bool ObdThread::initElm()
+bool ObdThread::m_setHeader(bool on)
+{
+	std::vector<unsigned char> replyVector;
+	QString reply="";
+	if (on)
+	{
+		if (!m_obd->sendObdRequestString("ath1\r",5,&replyVector,20,3))
+		{
+			return false;
+		}
+	}
+	else
+	{
+		if (!m_obd->sendObdRequestString("ath1\r",5,&replyVector,20,3))
+		{
+			return false;
+		}
+	}
+	reply = "";
+	for (unsigned int i=0;i<replyVector.size();i++)
+	{
+		reply += replyVector[i];
+	}
+	if (reply.contains("OK"))
+	{
+		return true;
+	}
+	return false;
+}
+
+bool ObdThread::m_setEcho(bool on)
+{
+	std::vector<unsigned char> replyVector;
+	QString reply="";
+	if (on)
+	{
+		if (!m_obd->sendObdRequestString("ate1\r",5,&replyVector,20,3))
+		{
+			return false;
+		}
+	}
+	else
+	{
+		if (!m_obd->sendObdRequestString("ate0\r",5,&replyVector,20,3))
+		{
+			return false;
+		}
+	}
+	reply = "";
+	for (unsigned int i=0;i<replyVector.size();i++)
+	{
+		reply += replyVector[i];
+	}
+	if (reply.contains("OK"))
+	{
+		return true;
+	}
+	debug("Bad return when turning echo off :" + reply,obdLib::DEBUG_WARN);
+	//qDebug() << "Bad Echo:" << reply;
+	return false;
+
+}
+
+bool ObdThread::m_setLineFeed(bool on)
+{
+	std::vector<unsigned char> replyVector;
+	QString reply="";
+	if (on)
+	{
+		if (!m_obd->sendObdRequestString("atl1\r",5,&replyVector,20,3))
+		{
+			return false;
+		}
+	}
+	else
+	{
+		if (!m_obd->sendObdRequestString("atl0\r",5,&replyVector,20,3))
+		{
+			return false;
+		}
+	}
+	reply = "";
+	for (unsigned int i=0;i<replyVector.size();i++)
+	{
+		reply += replyVector[i];
+	}
+	if (reply.contains("OK"))
+	{
+		return true;
+	}
+	return false;
+
+}
+
+bool ObdThread::m_initElm()
 {
 	//This tries to connect twice. The first time without a reset, the second time with a reset before all inits.
 	std::vector<unsigned char> replyVector;
@@ -1819,7 +1918,7 @@ bool ObdThread::initElm()
 
 		if (i == 1)
 		{
-			if (!resetElm())
+			if (!m_resetElm())
 			{
 				emit consoleMessage("Error resetting ELM Device");
 				//qDebug() << "Error resetting ELM device";
@@ -1829,7 +1928,7 @@ bool ObdThread::initElm()
 			setProtocol(0,false);
 		}
 		//Ensure echo, headers, and linefeeds are off.
-		if (!echoOff())
+		if (!m_setEcho(false))
 		{
 			emit consoleMessage("Error turning echo off");
 			//qDebug() << "Error turning echo off";
@@ -1837,7 +1936,7 @@ bool ObdThread::initElm()
 			if (i == 1) return false;
 			continue;
 		}
-		if (!headersOff())
+		if (!m_setHeader(false))
 		{
 			emit consoleMessage("Error turning headers off");
 			//qDebug() << "Error turning headers off";
@@ -1845,7 +1944,7 @@ bool ObdThread::initElm()
 			if (i == 1) return false;
 			continue;
 		}
-		if (!lineFeedOff())
+		if (!m_setLineFeed(false))
 		{
 			emit consoleMessage("Error turning linefeeds off");
 			//qDebug() << "Error turning linefeeds off";
@@ -1870,7 +1969,7 @@ bool ObdThread::initElm()
 	return false;
 }
 
-bool ObdThread::resetElm()
+bool ObdThread::m_resetElm()
 {
 	std::vector<unsigned char> replyVector;
 	QString reply="";
@@ -1905,73 +2004,6 @@ bool ObdThread::resetElm()
 		debug("Bad return when resetting :" + reply,obdLib::DEBUG_WARN);
 		return false;
 	}
-}
-bool ObdThread::echoOff()
-{
-	std::vector<unsigned char> replyVector;
-	QString reply="";
-	m_obd->sendObdRequestString("ate0\r",5,&replyVector,20,3);
-	reply = "";
-	for (unsigned int i=0;i<replyVector.size();i++)
-	{
-		reply += replyVector[i];
-	}
-	if (reply.contains("OK"))
-	{
-		return true;
-	}
-	debug("Bad return when turning echo off :" + reply,obdLib::DEBUG_WARN);
-	//qDebug() << "Bad Echo:" << reply;
-	return false;
-}
-bool ObdThread::headersOn()
-{
-	std::vector<unsigned char> replyVector;
-	QString reply="";
-	m_obd->sendObdRequestString("ath1\r",5,&replyVector,20,3);
-	reply = "";
-	for (unsigned int i=0;i<replyVector.size();i++)
-	{
-		reply += replyVector[i];
-	}
-	if (reply.contains("OK"))
-	{
-		return true;
-	}
-	return false;
-}
-
-bool ObdThread::headersOff()
-{
-	std::vector<unsigned char> replyVector;
-	QString reply="";
-	m_obd->sendObdRequestString("ath0\r",5,&replyVector,20,3);
-	reply = "";
-	for (unsigned int i=0;i<replyVector.size();i++)
-	{
-		reply += replyVector[i];
-	}
-	if (reply.contains("OK"))
-	{
-		return true;
-	}
-	return false;
-}
-bool ObdThread::lineFeedOff()
-{
-	std::vector<unsigned char> replyVector;
-	QString reply="";
-	m_obd->sendObdRequestString("atl0\r",5,&replyVector,20,3);
-	reply = "";
-	for (unsigned int i=0;i<replyVector.size();i++)
-	{
-		reply += replyVector[i];
-	}
-	if (reply.contains("OK"))
-	{
-		return true;
-	}
-	return false;
 }
 QString ObdThread::getElmVersion()
 {
@@ -2220,7 +2252,7 @@ bool ObdThread::m_connect(bool init)
 	}
 	if (init)
 	{
-		if (!initElm())
+		if (!m_initElm())
 		{
 			debug("Error in ELM init",obdLib::DEBUG_ERROR);
 			emit consoleMessage("Error in ELM init, port not opened");
