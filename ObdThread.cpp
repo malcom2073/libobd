@@ -1830,7 +1830,7 @@ bool ObdThread::m_setHeader(bool on)
 	}
 	else
 	{
-		if (!m_obd->sendObdRequestString("ath1\r",5,&replyVector,20,3))
+		if (!m_obd->sendObdRequestString("ath0\r",5,&replyVector,20,3))
 		{
 			return false;
 		}
