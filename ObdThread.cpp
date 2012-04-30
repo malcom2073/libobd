@@ -1546,65 +1546,70 @@ void ObdThread::run()
 				if (!m_obd->sendObdRequest("0120\r",5,&replyVector))
 				{
 					qDebug() << "Error in requesting supported pids 20-24";
-					continue;
+					//continue;
 				}
-				rep = "Reply: ";
-				for (unsigned int j=0;j<replyVector.size();j++)
+				else
 				{
-					rep += QString::number(replyVector[j],16).toUpper() + " ";
-				}
-				//qDebug() << "String reply:" << rep;
-				var = (((unsigned int)replyVector[2] << 24) + ((unsigned int)replyVector[3] << 16) + ((unsigned int)replyVector[4] << 8) + (unsigned int)replyVector[5]);
-				//qDebug() << "00 PID Reply:" << var;
-				for (int j=2;j<6;j++)
-				{
-					//qDebug() << replyVector[i];
-				}
-				//QList<QString> pids;
-				for (int j=1;j<0x20;j++)
-				{
-					if (((var >> (0x20-j)) & 1))
+					rep = "Reply: ";
+					for (unsigned int j=0;j<replyVector.size();j++)
 					{
-						//qDebug() << "Pid " << i << "Supported";
-						pids.append(QString("01").append(QString::number(j+(0x20),16).toUpper()));
-						//qDebug() << "Pid" << pids[pids.count()-1] << "supported";
-						//pids[0].append(1);
+						rep += QString::number(replyVector[j],16).toUpper() + " ";
 					}
-					else
+					//qDebug() << "String reply:" << rep;
+					var = (((unsigned int)replyVector[2] << 24) + ((unsigned int)replyVector[3] << 16) + ((unsigned int)replyVector[4] << 8) + (unsigned int)replyVector[5]);
+					//qDebug() << "00 PID Reply:" << var;
+					for (int j=2;j<6;j++)
 					{
-						//pids[0].append(0);
+						//qDebug() << replyVector[i];
+					}
+					//QList<QString> pids;
+					for (int j=1;j<0x20;j++)
+					{
+						if (((var >> (0x20-j)) & 1))
+						{
+							//qDebug() << "Pid " << i << "Supported";
+							pids.append(QString("01").append(QString::number(j+(0x20),16).toUpper()));
+							//qDebug() << "Pid" << pids[pids.count()-1] << "supported";
+							//pids[0].append(1);
+						}
+						else
+						{
+							//pids[0].append(0);
+						}
 					}
 				}
-
 				if (!m_obd->sendObdRequest("0140\r",5,&replyVector))
 				{
 					qDebug() << "Error in requesting supported pids 40-60";
-					continue;
+
 				}
-				rep = "Reply: ";
-				for (unsigned int j=0;j<replyVector.size();j++)
+				else
 				{
-					rep += QString::number(replyVector[j],16).toUpper() + " ";
-				}
-				//qDebug() << "String reply:" << rep;
-				var = (((unsigned int)replyVector[2] << 24) + ((unsigned int)replyVector[3] << 16) + ((unsigned int)replyVector[4] << 8) + (unsigned int)replyVector[5]);
-				//qDebug() << "00 PID Reply:" << var;
-				for (int j=2;j<6;j++)
-				{
-					//qDebug() << replyVector[i];
-				}
-				for (int j=1;j<0x20;j++)
-				{
-					if (((var >> (0x20-j)) & 1))
+					rep = "Reply: ";
+					for (unsigned int j=0;j<replyVector.size();j++)
 					{
-						//qDebug() << "Pid " << i << "Supported";
-						pids.append(QString("01").append(QString::number(j+0x40,16).toUpper()));
-						//qDebug() << "Pid" << pids[pids.count()-1] << "supported";
-						//pids[0].append(1);
+						rep += QString::number(replyVector[j],16).toUpper() + " ";
 					}
-					else
+					//qDebug() << "String reply:" << rep;
+					var = (((unsigned int)replyVector[2] << 24) + ((unsigned int)replyVector[3] << 16) + ((unsigned int)replyVector[4] << 8) + (unsigned int)replyVector[5]);
+					//qDebug() << "00 PID Reply:" << var;
+					for (int j=2;j<6;j++)
 					{
-						//pids[0].append(0);
+						//qDebug() << replyVector[i];
+					}
+					for (int j=1;j<0x20;j++)
+					{
+						if (((var >> (0x20-j)) & 1))
+						{
+							//qDebug() << "Pid " << i << "Supported";
+							pids.append(QString("01").append(QString::number(j+0x40,16).toUpper()));
+							//qDebug() << "Pid" << pids[pids.count()-1] << "supported";
+							//pids[0].append(1);
+						}
+						else
+						{
+							//pids[0].append(0);
+						}
 					}
 				}
 
