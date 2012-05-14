@@ -409,7 +409,7 @@ void ObdThread::ST_clearPassFilters()
 	RequestClass req;
 	req.type = RAW_REQUEST;
 	QByteArray reqbytes;
-	reqbytes.append("FCP\r");
+	reqbytes.append("STFCP\r");
 	req.custom = reqbytes;
 	req.repeat = false;
 	m_reqClassList.append(req);
@@ -421,7 +421,7 @@ void ObdThread::ST_clearBlockFilters()
 	RequestClass req;
 	req.type = RAW_REQUEST;
 	QByteArray reqbytes;
-	reqbytes.append("FCB\r");
+	reqbytes.append("STFCB\r");
 	req.custom = reqbytes;
 	req.repeat = false;
 	m_reqClassList.append(req);
@@ -433,7 +433,7 @@ void ObdThread::ST_clearFlowFilters()
 	RequestClass req;
 	req.type = RAW_REQUEST;
 	QByteArray reqbytes;
-	reqbytes.append("FCFC\r");
+	reqbytes.append("STFCFC\r");
 	req.custom = reqbytes;
 	req.repeat = false;
 	m_reqClassList.append(req);
@@ -476,7 +476,7 @@ void ObdThread::sendCanMessage(QString msg,bool is29Bit)
 		RequestClass header;
 		header.type = RAW_REQUEST;
 		reqbytes.clear();
-		reqbytes.append("ATSH" + msg.left(3) + "\r");
+		reqbytes.append("ATSH " + msg.left(3) + "\r");
 		header.custom = reqbytes;
 		header.repeat = false;
 
@@ -499,7 +499,7 @@ void ObdThread::MX_setBaudRate(int baud)
 	RequestClass req;
 	req.type = RAW_REQUEST;
 	QByteArray reqbytes;
-	reqbytes.append("STPBR" + QString::number(baud) + "\r");
+	reqbytes.append("STPBR " + QString::number(baud) + "\r");
 	req.custom = reqbytes;
 	req.repeat = false;
 	m_reqClassList.append(req);
@@ -719,12 +719,16 @@ void ObdThread::run()
 			}
 			else if (m_reqClassListThreaded[i].type == START_MONITOR)
 			{
+				m_obd->sendObdRequest("ATD0\r",5,-1);
 				m_obd->sendObdRequest("ATMA\r",5,-1);
+
+				qDebug() << "START MONITOR MODE";
 				while (m_monitorMode && m_threadRunning)
 				{
 					QByteArray str = QByteArray(m_obd->monitorModeReadLine().c_str());
 					emit monitorModeLine(str);
 				}
+				qDebug() << "END MONITOR MODE";
 				m_obd->sendObdRequest("\r",1,-1);
 			}
 			else if (m_reqClassListThreaded[i].type == ST_START_FILTER_MONITOR)
@@ -1327,7 +1331,7 @@ void ObdThread::run()
 					}
 					else
 					{
-						full = vectsplitline[k].mid(6,vectsplitline[k].length()-6); //This used to be -8, why?
+						full = vectsplitline[k].mid(6,vectsplitline[k].length()-8); //This used to be -8, why? To handle the checksum!
 						full = full.replace("\n","");
 						full = full.replace("\r","");
 						name = vectsplitline[k].mid(4,2);
