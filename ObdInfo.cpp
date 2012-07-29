@@ -25,7 +25,7 @@
 #include <math.h>
 ObdInfo::ObdInfo()
 {
-	QString filename = "";
+	/*QString filename = "";
 	if (QFile::exists("obd2data.dat"))
 	{
 		filename = "obd2data.dat";
@@ -38,7 +38,7 @@ ObdInfo::ObdInfo()
 	{
 		//qDebug() << "Error! No obd2data.dat file found! Expect a segfault";
 		//return;
-	}
+	}*/
 	/*
 	QFile file(filename);
 	if (!file.open(QIODevice::ReadOnly))

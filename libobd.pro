@@ -32,8 +32,6 @@ isEmpty( INSTALL_ROOT ){
 }
 unix {
 	target.path = $$INSTALL_ROOT/usr/lib
-	obd2data.path = $$INSTALL_ROOT/usr/share/libobd
-	obd2data.files = obd2data.dat
 	headers.files = $$HEADERS
 	headers.path = $$INSTALL_ROOT/usr/include
 	dist.commands += rm -fR $${PROJECT_NAME}-$${VERSION} &&
