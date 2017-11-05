@@ -65,8 +65,8 @@ This will give an output of something along the lines of\n
 A few useful notes:\n
 It is considered safe to call val.toDouble().\n
 A way to convert from pid to two unsigned char values is included with obdLib:\n
-unsigned char mode = obdLib::byteArrayToByte(pid[0].toAscii(),pid[1].toAscii());\n
-unsigned char pid = obdLib::byteArrayToByte(pid[2].toAscii(),pid[3].toAscii());\n
+unsigned char mode = obdLib::byteArrayToByte(pid[0].toLatin1(),pid[1].toLatin1());\n
+unsigned char pid = obdLib::byteArrayToByte(pid[2].toLatin1(),pid[3].toLatin1());\n
 */
 class ObdThread : public QThread
 {

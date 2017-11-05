@@ -710,20 +710,20 @@ int ObdInfo::intFromHex(QString num)
 	int final = 0;
 	for (int i=0;i<num.length();i++)
 	{
-		if (num.at(i).toAscii() >=48 && num.at(i).toAscii() <=57)
+		if (num.at(i).toLatin1() >=48 && num.at(i).toLatin1() <=57)
 		{
 			if ((16 << (int)(4*((num.length()-2)-i))) == 0)
 			{
-				final += (num.at(i).toAscii() - 48);
+				final += (num.at(i).toLatin1() - 48);
 			}
 			else
 			{
-				final += (num.at(i).toAscii() - 48) * ((16 << (int)(4 * ((num.length()-2) - i))));
+				final += (num.at(i).toLatin1() - 48) * ((16 << (int)(4 * ((num.length()-2) - i))));
 			}
 		}
-		else if (num.at(i).toUpper().toAscii() >= 65 && num.at(i).toUpper().toAscii() <= 70)
+		else if (num.at(i).toUpper().toLatin1() >= 65 && num.at(i).toUpper().toLatin1() <= 70)
 		{
-			final += 10 + (num.at(i).toUpper().toAscii() - 65) * pow(16.0,(num.length()-1) - i);
+			final += 10 + (num.at(i).toUpper().toLatin1() - 65) * pow(16.0,(num.length()-1) - i);
 		}
 	}
 	return final;

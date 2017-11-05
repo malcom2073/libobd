@@ -236,7 +236,7 @@ void ObdThread::sendElmCommand(QString cmd)
 	threadLockMutex.lock();
 	RequestClass req;
 	req.type = ELM_COMMAND;
-	req.custom = QByteArray(cmd.append("\r").toAscii());
+	req.custom = QByteArray(cmd.append("\r").toLatin1());
 	m_reqClassList.append(req);
 	threadLockMutex.unlock();
 }
@@ -542,8 +542,8 @@ QStringList ObdThread::parseCode(QString codetoparse,QString type)
 		if (inCode)
 		{
 			count++;
-			unsigned char onefirst = m_obd->byteArrayToByte(codetoparse.toAscii().at(j),codetoparse.toAscii().at(j+1));
-			unsigned char onesecond = m_obd->byteArrayToByte(codetoparse.toAscii().at(j+2),codetoparse.toAscii().at(j+3));
+			unsigned char onefirst = m_obd->byteArrayToByte(codetoparse.toLatin1().at(j),codetoparse.toLatin1().at(j+1));
+			unsigned char onesecond = m_obd->byteArrayToByte(codetoparse.toLatin1().at(j+2),codetoparse.toLatin1().at(j+3));
 			if (!(onefirst >> 7) & 1)
 			{
 				if (!((onefirst >> 6) & 1))
@@ -888,11 +888,11 @@ void ObdThread::run()
 						qDebug() << "Done" << responsesplit;
 						if (responsesplit.size() >= 15)
 						{
-							unsigned char limittype = m_obd->byteArrayToByte(responsesplit[4].toAscii(),responsesplit[5].toAscii());
-							//unsigned char testhigh = m_obd->byteArrayToByte(responsesplit[6].toAscii(),responsesplit[7].toAscii());
-							//unsigned char testlow = m_obd->byteArrayToByte(responsesplit[8].toAscii(),responsesplit[9].toAscii());
-							//unsigned char limithigh = m_obd->byteArrayToByte(responsesplit[10].toAscii(),responsesplit[11].toAscii());
-							//unsigned char limitlow = m_obd->byteArrayToByte(responsesplit[12].toAscii(),responsesplit[13].toAscii());
+							unsigned char limittype = m_obd->byteArrayToByte(responsesplit[4].toLatin1(),responsesplit[5].toLatin1());
+							//unsigned char testhigh = m_obd->byteArrayToByte(responsesplit[6].toLatin1(),responsesplit[7].toLatin1());
+							//unsigned char testlow = m_obd->byteArrayToByte(responsesplit[8].toLatin1(),responsesplit[9].toLatin1());
+							//unsigned char limithigh = m_obd->byteArrayToByte(responsesplit[10].toLatin1(),responsesplit[11].toLatin1());
+							//unsigned char limitlow = m_obd->byteArrayToByte(responsesplit[12].toLatin1(),responsesplit[13].toLatin1());
 							qDebug() << "Test:" << QString::number(limittype);
 							if (((limittype >> 7) & 1) == 1)
 							{
@@ -1007,16 +1007,16 @@ void ObdThread::run()
 								QString name = total.mid(k,4);
 								k+= 4;
 								QString type = total.mid(k,2);
-								unsigned char obdmidchar = obdLib::byteArrayToByte(name[0].toAscii(),name[1].toAscii());
-								unsigned char obdtidchar = obdLib::byteArrayToByte(name[2].toAscii(),name[3].toAscii());
-								unsigned char typechar = obdLib::byteArrayToByte(type[0].toAscii(),type[1].toAscii());
+								unsigned char obdmidchar = obdLib::byteArrayToByte(name[0].toLatin1(),name[1].toLatin1());
+								unsigned char obdtidchar = obdLib::byteArrayToByte(name[2].toLatin1(),name[3].toLatin1());
+								unsigned char typechar = obdLib::byteArrayToByte(type[0].toLatin1(),type[1].toLatin1());
 								midlist.append(obdmidchar);
 								tidlist.append(obdtidchar);
 								k+=2;
 								QString val = total.mid(k,4);
 								unsigned int valb=0;
-								valb += obdLib::byteArrayToByte(val[0].toAscii(),val[1].toAscii()) << 8;
-								valb += obdLib::byteArrayToByte(val[2].toAscii(),val[3].toAscii());
+								valb += obdLib::byteArrayToByte(val[0].toLatin1(),val[1].toLatin1()) << 8;
+								valb += obdLib::byteArrayToByte(val[2].toLatin1(),val[3].toLatin1());
 								qDebug() << name;
 								qDebug() << type;
 								qDebug() << "MID:" << QString::number(obdmidchar,16);
@@ -1032,11 +1032,11 @@ void ObdThread::run()
 								k += 3;
 								qDebug() << "Min:" << min;
 								qDebug() << "Max:" << max;
-								unsigned char maxtop = obdLib::byteArrayToByte(max[0].toAscii(),max[1].toAscii());
-								unsigned char maxbot = obdLib::byteArrayToByte(max[2].toAscii(),max[3].toAscii());
+								unsigned char maxtop = obdLib::byteArrayToByte(max[0].toLatin1(),max[1].toLatin1());
+								unsigned char maxbot = obdLib::byteArrayToByte(max[2].toLatin1(),max[3].toLatin1());
 								double totalmax = (maxtop << 8) + maxbot;
-								unsigned char mintop = obdLib::byteArrayToByte(min[0].toAscii(),min[1].toAscii());
-								unsigned char minbot = obdLib::byteArrayToByte(min[2].toAscii(),min[3].toAscii());
+								unsigned char mintop = obdLib::byteArrayToByte(min[0].toLatin1(),min[1].toLatin1());
+								unsigned char minbot = obdLib::byteArrayToByte(min[2].toLatin1(),min[3].toLatin1());
 								double totalmin = (mintop << 8) + minbot;
 								if (test.id == 0)
 								{
@@ -1140,10 +1140,10 @@ void ObdThread::run()
 				else
 				{
 					qDebug() << "MONITOR_STATUS size: " << vect2.size();
-					//unsigned char one = m_obd->byteArrayToByte(vect2[4].toAscii(),vect2[5].toAscii());
-					unsigned char two = m_obd->byteArrayToByte(vect2[6].toAscii(),vect2[7].toAscii());
-					unsigned char three = m_obd->byteArrayToByte(vect2[8].toAscii(),vect2[9].toAscii());
-					unsigned char four = m_obd->byteArrayToByte(vect2[10].toAscii(),vect2[11].toAscii());
+					//unsigned char one = m_obd->byteArrayToByte(vect2[4].toLatin1(),vect2[5].toLatin1());
+					unsigned char two = m_obd->byteArrayToByte(vect2[6].toLatin1(),vect2[7].toLatin1());
+					unsigned char three = m_obd->byteArrayToByte(vect2[8].toLatin1(),vect2[9].toLatin1());
+					unsigned char four = m_obd->byteArrayToByte(vect2[10].toLatin1(),vect2[11].toLatin1());
 					QString onestr;
 					QString twostr;
 					QString threestr;
@@ -1305,9 +1305,9 @@ void ObdThread::run()
 				QByteArray bytevect;
 				for (int j=0;j<vect.size();j++)
 				{
-					bytevect.append(m_obd->byteArrayToByte(vect.toAscii().at(j),vect.toAscii().at(j+1)));
-					//qDebug() << "Origional" << vect.toAscii().at(i) << vect.toAscii().at(i+1);
-					//qDebug() << "Converted:" << m_obd->byteArrayToByte(vect.toAscii().at(i),vect.toAscii().at(i+1));
+					bytevect.append(m_obd->byteArrayToByte(vect.toLatin1().at(j),vect.toLatin1().at(j+1)));
+					//qDebug() << "Origional" << vect.toLatin1().at(i) << vect.toLatin1().at(i+1);
+					//qDebug() << "Converted:" << m_obd->byteArrayToByte(vect.toLatin1().at(i),vect.toLatin1().at(i+1));
 					j++;
 				}
 				QStringList vectsplitline = vect2.split("\r");

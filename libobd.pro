@@ -47,3 +47,6 @@ INSTALLS += target headers
 
 OTHER_FILES += \
     ObdThread.cs
+
+DISTFILES += \
+    libobd.pri

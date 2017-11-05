@@ -298,7 +298,7 @@ std::string obdLib::monitorModeReadLine()
 	bool breakit = false;
 	while (!breakit)
 	{
-#ifndef WINHACK
+#ifndef WIN32
 		len = read(portHandle,tmp,1024);
 #else
 	if (!ReadFile(portHandle,(LPVOID)tmp,1024,(LPDWORD)&len,NULL))
