@@ -626,9 +626,9 @@ void ObdThread::run()
 				{
 					m_reqClassFailureMap.remove(&m_reqClassListThreaded[j]);
 					m_reqClassListThreaded.removeAt(j);
-					m_reqClassRemoveList.removeAt(i);
+					//m_reqClassRemoveList.removeAt(i);
 					j--;
-					i--;
+					//i--;
 				}
 			}
 		}
@@ -1121,7 +1121,12 @@ void ObdThread::run()
 			else if (m_reqClassListThreaded[i].type == MONITOR_STATUS)
 			{
 				qDebug() << "MONITOR_STATUS";
+
 				std::vector<unsigned char> replyVector;
+				if (!m_obd->sendObdRequest("ATH0\r",5,&replyVector))
+				{
+					qDebug() << "Unable to disable headers";
+				}
 				m_obd->sendObdRequestString("0101\r",5,&replyVector,100,5);
 				QString vect2 = "";
 
@@ -1717,6 +1722,10 @@ void ObdThread::run()
 								qDebug() << rrtest;
 								*/
 								QString func = pid->function;
+								if (func == "")
+								{
+									continue;
+								}
 								if (func.contains("A"))
 								{
 									func = func.replace(QString("A"),QString::number(replyVectorString[2]));

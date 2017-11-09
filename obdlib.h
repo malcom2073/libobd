@@ -88,6 +88,7 @@ public:
 		SERIALWRITEERROR,
 		SERIALREADERROR,
 		TIMEOUT,
+		BUSINIT,
 		NONE
 	};
 	enum DebugLevel

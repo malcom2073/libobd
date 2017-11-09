@@ -500,6 +500,18 @@ bool obdLib::sendObdRequestString(const char *req,int length,std::vector<byte> *
 		debug(obdLib::DEBUG_ERROR,"nodata");
 		return false;
 	}
+	errorlen = strspn("BUS INIT",totalReply);
+	if (errorlen == 8)
+	{
+		//Error
+		//printf("Error\n");
+		//Nodata here
+		m_lastError = BUSINIT;
+		delete[] tmp;
+		delete[] totalReply;
+		debug(obdLib::DEBUG_ERROR,"businit");
+		return false;
+	}
 	delete[] totalReply;
 	delete[] tmp;
 	//tcflush(portHandle,TCIFLUSH);
